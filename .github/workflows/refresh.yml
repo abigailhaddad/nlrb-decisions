@@ -1,0 +1,52 @@
+name: Refresh NLRB decisions
+
+# Daily 11:25 UTC: read the first 3 pages (100 rows each) of each of NLRB's three decision listings,
+# 9 requests about a second apart, and merge them into the Hugging Face table. Uploads only if a row was
+# added or changed. Needs the repository secret HF_TOKEN (write access to abigailhaddad/nlrb-decisions);
+# without it the run still fetches and checks, then skips the upload with a message. A failed run emails
+# the owner.
+
+on:
+  schedule:
+    - cron: "25 11 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-dev.txt
+      - run: python -m pytest -q tests
+      - name: Refresh
+        run: |
+          if [ -z "$HF_TOKEN" ]; then
+            echo "::notice::HF_TOKEN secret is empty, so this run fetches and merges but does not upload. Add the secret to publish."
+          fi
+          python src/refresh.py
+
+      # GitHub disables scheduled workflows in a public repo after 60 days with no commits.
+      - name: Keepalive commit
+        if: ${{ always() }}
+        run: |
+          age=$(( ( $(date +%s) - $(git log -1 --format=%ct) ) / 86400 ))
+          echo "newest commit is $age days old"
+          if [ "$age" -ge 45 ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "Keepalive: no commits in $age days"
+            git push
+          fi
