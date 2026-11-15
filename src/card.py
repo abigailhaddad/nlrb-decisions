@@ -48,7 +48,7 @@ configs:
 
 # NLRB decisions: Board, unpublished Board, and administrative law judge
 
-Metadata for every entry on the National Labor Relations Board's three public decision listings, with links to each decision document and case page. Not affiliated with the NLRB. Listings read {read_on}; a daily job adds new entries (see the commit history for the latest refresh).
+Metadata for every entry on the National Labor Relations Board's three public decision listings, with links to each decision document and case page. Not affiliated with the NLRB. Listings read {read_on}. A daily GitHub Action in the code repo merges in new entries and uploads here when something changed; this repo's commit history shows the latest refresh.
 
 `decisions.parquet` has {n(len(df))} rows, one per listing entry:
 

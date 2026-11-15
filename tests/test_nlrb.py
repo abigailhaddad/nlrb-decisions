@@ -72,3 +72,26 @@ def test_finalize_and_merge():
     new = pd.DataFrame({"record_id": ["b", "c"], "v": [2, 2]})
     m = refresh.merge(old, new).set_index("record_id")
     assert sorted(m.index) == ["a", "b", "c"] and m.loc["b", "v"] == 2
+
+
+def test_changed_rows_ignores_blank_types():
+    old = pd.DataFrame({"record_id": ["a", "b"], "listing": ["alj", "alj"], "citation": [None, None]})
+    new = pd.DataFrame({"record_id": ["a", "c"], "listing": ["alj", "alj"], "citation": pd.Series([float("nan"), None], dtype=object)})
+    assert refresh.changed_rows(old, new) == (1, 0)
+    new.loc[0, "citation"] = "x"
+    assert refresh.changed_rows(old, new) == (1, 1)
+
+
+def test_refresh_skips_upload_without_token(monkeypatch, tmp_path, capsys):
+    d, _ = nlrb.parse_page(load("board_page0.html"), "board")
+    old = build.finalize(pd.DataFrame(d))
+    new = old.head(3).copy()
+    new.loc[0, "case_name"] = "changed"
+    monkeypatch.setattr(refresh.pd, "read_parquet", lambda url: old)
+    monkeypatch.setattr(refresh, "fetch_new", lambda: new)
+    monkeypatch.delenv("HF_TOKEN", raising=False)
+    monkeypatch.setattr(sys, "argv", ["refresh.py"])
+    monkeypatch.chdir(tmp_path)
+    refresh.main()
+    out = capsys.readouterr().out
+    assert "'updated': 1" in out and "SKIP UPLOAD: the HF_TOKEN secret is empty" in out
