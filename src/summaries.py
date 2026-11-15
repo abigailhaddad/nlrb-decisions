@@ -21,12 +21,12 @@ MONTHS = "January|February|March|April|May|June|July|August|September|October|No
 DATE = re.compile(r"(%s)\.?\s+(\d{1,2})\s*,?\s*(\d{4})" % MONTHS)
 MONTH_NO = {m: i + 1 for i, m in enumerate(MONTHS.split("|"))}
 DASH = "-‐‑‒–—"
-CASE_TOKEN = r"\d(?: ?\d)?\s*[%s]\s*[A-Z]{1,2}\s*[%s]?\s*\d{1,6}" % (DASH, DASH)
-CASE_FULL = re.compile(r"(\d(?: ?\d)?)\s*[%s]\s*([A-Z]{1,2})\s*[%s]?\s*(\d{1,6})" % (DASH, DASH))
+CASE_TOKEN = r"\d(?: ?\d)?\s*[%s]?\s*[A-Z]{1,2}\s*[%s]{0,2}\s*\d{1,6}" % (DASH, DASH)
+CASE_FULL = re.compile(r"(\d(?: ?\d)?)\s*[%s]?\s*([A-Z]{1,2})\s*[%s]{0,2}\s*(\d{1,6})" % (DASH, DASH))
 CITE = re.compile(r"(\d{1,3})\s+NLRB\s+(No\.\s*)?(\d{1,5})")
 JD = re.compile(r"JD(?:\s*\(\s*[A-Z]{2,4}\s*\))?[%s\s]*\d+\s*[%s]\s*\d{2,4}" % (DASH, DASH))
-NOISE = re.compile(r"^(\*+|No .{0,60}(Issued|Decisions)\.?|None\.?)$", re.I)
-END = re.compile(r"^To have the NLRB.s Weekly Summary|^To have the NLRB.s|^Subscribe", re.I)
+NOISE = re.compile(r"^(\*+|(No|None)\b[^.]{0,90}?(issued|to report|cases?|decisions?|this week|the NLRB)\.?)$", re.I)  # "No Published Decisions Issued."
+END = re.compile(r"^To have the (NLRB.s )?(Weekly )?Summary|^Subscribe", re.I)
 
 
 def clean(fragment):
@@ -150,27 +150,33 @@ def iso(m):
 def parse_header(t, section):
     """Header fields of an entry's first paragraph, or None if it doesn't look like an entry header."""
     if section == "appellate":
-        # "Name, Board Case No. 16-CA-363860 (reported at 374 NLRB No. 36) (5th Cir. Nov. 3, 2026)": one paragraph
-        m = APPELLATE.match(t)
-        if not m or len(t) > 600 or len(m.group("name")) > 400:
+        # One paragraph naming the case and the court, in several styles over the years:
+        #   "Name, Board Case No. 16-CA-363860 (reported at 374 NLRB No. 36) (5th Cir. Nov. 3, 2026)"
+        #   "Name, 28-CA-023148 (published at 356 NLRB No. 160) (10th Cir. decided August 28, 2012)"
+        #   "NLRB v. E.A. Sween Corp. (13-CA-45563& 7th Cir. 10-3639), May 16, 2011"
+        m = re.search(CASE_TOKEN, t)
+        if not m or len(t) > 600:
             return None
-        tail = m.group("paren")
+        name = re.sub(r"[\s,(]*(?:NLRB\s+)?(?:Board\s+)?(?:Case\s+)?(?:Nos?\.)?[\s(]*$", "", t[:m.start()]).strip(" ,")
+        if not name or len(name) > 400:
+            return None
+        tail = t[m.start():]
         cites = [c.group(0) for c in CITE.finditer(tail)]
-        court = re.search(r"\(?([^()]*\b(?:Cir|Circuit|Court|Supreme|D\.C\.)\b[^()]*\d{4}[^()]*)\)?", tail)
-        courttxt = court.group(1).strip(" ,.()") if court else None
-        date = None
-        if courttxt:
-            d = DATE.search(courttxt)
-            ab = re.search(r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(\d{1,2}),\s*(\d{4})", courttxt)
-            if d:
-                date = iso(d)
-            elif ab:
-                mon = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].index(ab.group(1)) + 1
-                date = f"{int(ab.group(3)):04d}-{mon:02d}-{int(ab.group(2)):02d}"
-        return {"case_name": m.group("name").strip(" ,"), "header_parenthetical": tail.strip(),
-                "case_numbers": case_numbers(tail.split("(")[0] if "(" in tail else tail), "citation": None,
-                "reported_at": "; ".join(cites) or None, "jd_number": None, "place": None, "court": courttxt,
-                "date": date, "date_source": "header" if date else None, "header_date_text": courttxt, "rest": ""}
+        court = re.search(r"\b(\d+(?:st|nd|rd|th)\s+Cir\.?|D\.\s?C\.\s+Cir\.?|Supreme Court|[A-Z][a-z]+ Circuit)", tail)
+        dates = list(DATE.finditer(tail))
+        ab = list(re.finditer(r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(\d{1,2}),?\s*(\d{4})", tail))
+        date, dtext = None, None
+        if dates:
+            date, dtext = iso(dates[-1]), dates[-1].group(0)
+        elif ab:
+            mon = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].index(ab[-1].group(1)) + 1
+            date, dtext = f"{int(ab[-1].group(3)):04d}-{mon:02d}-{int(ab[-1].group(2)):02d}", ab[-1].group(0)
+        first_paren = tail.split("(")[0] if "(" in tail else tail
+        return {"case_name": name, "header_parenthetical": tail.strip(),
+                "case_numbers": case_numbers(re.split(r"\d+(?:st|nd|rd|th)\s+Cir|D\.C\. Cir", first_paren)[0]),
+                "citation": None, "reported_at": "; ".join(cites) or None, "jd_number": None, "place": None,
+                "court": court.group(1) if court else None, "date": date,
+                "date_source": "header" if date else None, "header_date_text": dtext, "rest": ""}
     m = HEAD.match(t)
     if not m or len(m.group("name")) > 700:
         return None
@@ -184,19 +190,21 @@ def parse_header(t, section):
     # place and date: "Compton, CA, August 10, 2026. The Board ..." (ALJ headers often have no date)
     d = DATE.search(rest[:200])
     place, date, date_text, after = None, None, None, rest
-    abbrev = re.compile(r"\b(St|Ste|Ft|Mt|Pt|Mt|Ave|[A-Z])\.(?=\s)")  # "St. Louis", "D. C."
+    abbrev = re.compile(r"\b(St|Ste|Ft|Mt|Pt)\.(?=\s)")  # "St. Louis"; "D.C." ends a place
     if d and d.start() < 150 and not re.search(r"\.\s", abbrev.sub("", rest[:d.start()])):
         place = rest[:d.start()].strip(" ,.")
         date, date_text = iso(d), d.group(0)
         after = rest[d.end():].lstrip(" .")
     else:
-        stop = re.search(r"\.\s", rest)
+        # first sentence end that is not an abbreviation such as "St. Louis"
+        stop = next((x for x in re.finditer(r"\.\s", rest) if not abbrev.search(rest[max(0, x.start() - 4):x.start() + 2])), None)
         if stop and stop.start() < 150:
             place = rest[:stop.start()].strip(" ,.")
             after = rest[stop.end():]
     date_source = "header" if date else None
-    if not date:
-        d2 = re.search(r"issued (?:his|her|the|their|a)?\s*(?:bench )?decisions?\s+(?:on\s+)?" + DATE.pattern, after)
+    if not date and section == "alj":  # ALJ headers carry no date; the summary says when the judge issued it
+        d2 = re.search(r"(?:issued (?:his|her|the|their|a)?[^.]{0,60}?\b(?:[Dd]ecisions?|Certification)\b[^.]{0,20}?|"
+                       r"(?:Errata|Erratum|Correction) issued )(?:on\s+)?" + DATE.pattern, rest)
         if d2:
             date, date_text, date_source = iso(DATE.search(d2.group(0))), DATE.search(d2.group(0)).group(0), "summary text"
     return {"case_name": m.group("name").strip(" ,"), "header_parenthetical": paren.strip(),
@@ -241,12 +249,13 @@ def parse_week(page, where=None):
         if NOISE.match(t):
             close()
             continue
-        if is_bold(chunk) and len(t) < 60 and not HEAD.match(t):
+        if (is_bold(chunk) and len(t) < 60 and not HEAD.match(t)) or re.fullmatch(r"[RC] Cases", t):
             close()
             sub = t  # e.g. "R Cases", "C Cases"
             continue
         # appellate headers are one paragraph that opens with the name in bold or ends with "(5th Cir. ...)"
-        appellate_like = section == "appellate" and (starts_with_name(chunk) or t.rstrip(" .").endswith(")"))
+        appellate_like = section == "appellate" and len(t) < 450 and bool(re.search(CASE_TOKEN, t[:300])) and (
+            starts_with_name(chunk) or t.rstrip(" .:").endswith(")") or bool(DATE.search(t[-30:])) or " Cir" in t)
         h = parse_header(t, section) if (starts_with_name(chunk) and section != "appellate") or appellate_like else None
         if h is None and section != "appellate":
             h2 = parse_header(t, section)  # header without bold name; accept only a clean match

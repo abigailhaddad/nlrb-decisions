@@ -29,7 +29,7 @@ def load(dec_path):
 def reason(note):
     if note is None:
         return None
-    for k in ("court decision", "citation conflict", "ambiguous", "no date", "no row with this case number and date"):
+    for k in ("court decision", "citation conflict", "has citation", "ambiguous", "no date", "no row with this case number and date"):
         if k in note:
             return k
     return note
@@ -53,10 +53,10 @@ def coverage(s, d):
         best = None
         for c in r.case_numbers.split("; "):
             g = idx.get(B.case_key(c))
-            if g is None or not r.date:
+            if g is None or not isinstance(r.date, str):
                 continue
             for x in g.itertuples():
-                if not x.issuance_date:
+                if not isinstance(x.issuance_date, str):
                     continue
                 try:
                     gap = (datetime.date.fromisoformat(x.issuance_date) - datetime.date.fromisoformat(r.date)).days
@@ -74,6 +74,8 @@ def coverage(s, d):
     def bucket(r):
         if r["reason"] == "no date":
             return "entry has no date in its header or summary"
+        if r["reason"] in ("citation conflict", "has citation"):
+            return "the summary's citation disagrees with the row(s) found"
         if r["reason"] == "ambiguous":
             return "more than one row qualifies"
         if not r["case_number_in_table"]:
@@ -86,7 +88,8 @@ def coverage(s, d):
 
     lo, hi = s["date"].dropna().min(), s["date"].dropna().max()
     real = s["date"].dropna()
-    real = real[real >= "2010"]
+    implausible = s[s["date"].notna() & ((s["date"] < "2010") | (s["date"] > TODAY))]
+    real = real[(real >= "2010") & (real <= TODAY)]
     lo, hi = real.min(), real.max()
     matched_ids = set(s["record_id"].dropna())
     inrange = d[(d["issuance_date"] >= lo) & (d["issuance_date"] <= hi)]
@@ -94,6 +97,11 @@ def coverage(s, d):
     rev = inrange.assign(has_summary=inrange["record_id"].isin(matched_ids)).groupby(
         ["listing", inrange["issuance_date"].str[:4]])["has_summary"].agg(["size", "sum"])
     dup = s["record_id"].dropna()
+    cm = s[s["record_id"].notna() & s["match_note"].notna()].merge(d[["record_id", "citation"]], on="record_id", suffixes=("", "_listing"))
+    page_form = cm["citation"].map(B.cite_key).map(lambda k: k and k[1]) & cm["citation_listing"].map(B.cite_key).map(lambda k: bool(k) and not k[1]) \
+        & (cm["citation"].map(lambda c: B.cite_key(c) and B.cite_key(c)[0]) == cm["citation_listing"].map(lambda c: B.cite_key(c) and B.cite_key(c)[0]))
+    cn_page = page_form.sum()
+    cn_differ = cm[~page_form][["summary_id", "citation", "citation_listing", "match_note"]].to_dict("records")
     out = {
         "as_of": TODAY, "entries": len(s), "weeks": int(s["week_url"].nunique()),
         "entry_dates": [lo, hi],
@@ -101,6 +109,9 @@ def coverage(s, d):
         "by_year_excluding_appellate": {k: {"entries": int(v["size"]), "matched": int(v["sum"])} for k, v in by_year.iterrows()},
         "match_method": s["match_method"].value_counts().to_dict(),
         "matched_with_citation_note": int((s["record_id"].notna() & s["match_note"].notna()).sum()),
+        "matched_listing_shows_bound_volume_page": int(cn_page),
+        "matched_citations_differ": cn_differ,
+        "entries_with_implausible_dates": implausible[["summary_id", "header_date_text", "date", "record_id"]].to_dict("records"),
         "unmatched_excluding_appellate": len(un),
         "unmatched_reason": un["reason"].value_counts().to_dict(),
         "unmatched_bucket": un["bucket"].value_counts().to_dict(),

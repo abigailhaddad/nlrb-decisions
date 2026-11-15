@@ -6,11 +6,15 @@ and out/summaries_report.json.
 Matching, in order. A match is only made when exactly one row qualifies; otherwise the entry stays
 unmatched and `match_note` says why.
   1. citation: the entry's NLRB citation equals the row's (volume and number compared as numbers), and the
-     row also shares a case number or the issuance date with the entry. If the citation matches rows but
-     none agrees on case number or date, nothing is matched ("citation conflict").
+     row also shares a case number or the issuance date with the entry. If the citation is on rows but none
+     agrees on case number or date ("citation conflict"), nothing is matched: the summary may be about a
+     different document in the case, such as an erratum.
   2. case number + date: one of the entry's case numbers equals the row's case number (compared as region,
      type, number) and the row's issuance date equals the entry's date. If more than one row qualifies,
      rows on the listing that corresponds to the entry's section are preferred; still more than one, no match.
+     If the entry has a citation, the row's citation must be compatible with it (citations_compatible):
+     blank, the same apart from a missing "No.", or a bound-volume page in the same or the next volume
+     (NLRB replaces a slip-opinion number with the bound-volume page once the volume is printed).
 Appellate court entries describe court decisions, which are not in decisions.parquet, so they are not
 matched.
 """
@@ -23,7 +27,7 @@ import summaries as S
 import summaries_crawl as C
 
 SECTION_LISTING = {"board": "board", "unpublished": "unpublished", "alj": "alj"}
-COLS = ["summary_id", "record_id", "match_method", "match_note", "week_url", "week_title", "week_posted",
+COLS = ["summary_id", "record_id", "match_method", "match_note", "duplicate_of", "week_url", "week_title", "week_posted",
         "section", "subsection", "entry_index", "case_name", "case_numbers", "header_parenthetical", "citation",
         "jd_number", "reported_at", "court", "place", "date", "date_source", "header_date_text", "header",
         "summary_text"]
@@ -63,12 +67,33 @@ def load_entries():
     return rows, problems, week_counts
 
 
+def mark_duplicates(entries):
+    """duplicate_of: the summary_id of an earlier-posted entry with the same summary text and the same header
+    apart from spacing. NLRB lists some weeks twice under different addresses (e.g. ...-july-4-to-8 and
+    ...-july-4-to-8-0). Both copies are kept."""
+    first = {}
+    for e in sorted(entries, key=lambda e: (e["week_posted"] or "", e["week_url"], e["entry_index"])):
+        k = (re.sub(r"\s+", "", e["header"]), e["summary_text"])
+        e["duplicate_of"] = first.get(k)
+        first.setdefault(k, e["summary_id"])
+    return entries
+
+
+def citations_compatible(summary_cite, row_cite):
+    a, b = cite_key(summary_cite), cite_key(row_cite)
+    if not a or not b:
+        return True
+    if (a[0], a[2]) == (b[0], b[2]):
+        return True  # same, or differing only by "No."
+    return a[1] and not b[1] and b[0] in (a[0], a[0] + 1)
+
+
 def match(entries, dec):
     dec = dec.copy()
     dec["cite_k"] = dec["citation"].map(cite_key)
     dec["case_k"] = dec["case_number"].map(case_key)
     by_cite, by_case_date = defaultdict(list), defaultdict(list)
-    for r in dec[["record_id", "cite_k", "case_k", "issuance_date", "listing"]].itertuples(index=False):
+    for r in dec[["record_id", "cite_k", "case_k", "issuance_date", "listing", "citation"]].itertuples(index=False):
         if r.cite_k:
             by_cite[r.cite_k].append(r)
         if r.case_k and r.issuance_date:
@@ -89,8 +114,10 @@ def match(entries, dec):
             if len(agree) == 1:
                 e["record_id"], e["match_method"] = agree[0].record_id, "citation"
                 continue
-            note = ("citation conflict: the row(s) with this citation share no case number or date" if not agree
-                    else f"ambiguous: {len(agree)} rows with this citation")
+            if not agree:
+                e["match_note"] = "citation conflict: the row(s) with this citation share no case number or date"
+                continue
+            note = f"ambiguous: {len(agree)} rows with this citation"
         elif ck:
             note = "citation not in table"
         if not e["date"]:
@@ -100,7 +127,9 @@ def match(entries, dec):
         if len(cands) > 1:
             same = [r for r in cands if r.listing == SECTION_LISTING.get(e["section"])]
             cands = same if same else cands
-        if len(cands) == 1:
+        if len(cands) == 1 and ck and not citations_compatible(e.get("citation"), cands[0].citation):
+            e["match_note"] = (note + "; " if note else "") + f"the one row with this case number and date has citation {cands[0].citation}"
+        elif len(cands) == 1:
             e["record_id"], e["match_method"], e["match_note"] = cands[0].record_id, "case number + date", note
         elif len(cands) > 1:
             e["match_note"] = (note + "; " if note else "") + f"ambiguous: {len(cands)} rows with this case number and date"
@@ -113,7 +142,7 @@ def main():
     src = sys.argv[1] if len(sys.argv) > 1 else "out/decisions.parquet"
     dec = pd.read_parquet(src)
     entries, problems, week_counts = load_entries()
-    entries = match(entries, dec)
+    entries = mark_duplicates(match(entries, dec))
     df = pd.DataFrame(entries)
     df["case_numbers"] = df["case_numbers"].map(lambda x: "; ".join(x))
     df = df[COLS].sort_values(["week_posted", "week_url", "entry_index"], ascending=[False, True, True]).reset_index(drop=True)
@@ -126,6 +155,7 @@ def main():
         "entries": len(df), "by_section": df["section"].value_counts().to_dict(),
         "matched": int(df["record_id"].notna().sum()),
         "matched_by_method": df["match_method"].value_counts().to_dict(),
+        "duplicate_entries": int(df["duplicate_of"].notna().sum()),
         "problems": problems,
     }
     json.dump(rep, open("out/summaries_report.json", "w"), indent=1, ensure_ascii=False)

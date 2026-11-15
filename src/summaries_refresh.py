@@ -61,7 +61,7 @@ def main():
     for e in olde:
         e["case_numbers"] = e["case_numbers"].split("; ") if e["case_numbers"] else []
     before = {e["summary_id"]: e["record_id"] for e in olde}
-    allm = B.match(olde + new_entries, dec)
+    allm = B.mark_duplicates(B.match(olde + new_entries, dec))
     changed = [e["summary_id"] for e in allm if e["summary_id"] in before and before[e["summary_id"]] is not None
                and e["record_id"] != before[e["summary_id"]]]
     if changed:

@@ -178,6 +178,9 @@ def test_summary_match():
                   e(section="unpublished", case_numbers=["28-RC-380779"], date="2026-09-21"),      # two rows qualify
                   e(section="unpublished", case_numbers=["28-RC-380779"], date="2026-09-22"),
                   e(section="appellate", case_numbers=["30-CA-16577"], date="2011-01-05")], dec)
-    assert [x["record_id"] for x in es] == ["board|a", "board|b", None, None, None]
-    assert es[1]["match_method"] == "case number + date" and "citation not in table" in es[1]["match_note"]
+    # the summary's 374 NLRB No. 38 is not compatible with the row's 375 NLRB No. 38: left unmatched
+    assert [x["record_id"] for x in es] == ["board|a", None, None, None, None]
+    assert "has citation 375 NLRB No. 38" in es[1]["match_note"]
+    assert B.citations_compatible("358 NLRB No. 95", "358 NLRB 1087") and B.citations_compatible("357 NLRB No. 7", "358 NLRB 27")
+    assert B.citations_compatible("372 NLRB 64", "372 NLRB No. 64") and not B.citations_compatible("368 NLRB No. 100", "368 NLRB No. 97")
     assert "ambiguous" in es[2]["match_note"] and "no row" in es[3]["match_note"]
