@@ -42,8 +42,8 @@ def fetch_new():
 def changed_rows(old, new):
     """How many fetched rows are new or differ from the stored copy."""
     cols = [c for c in build.COLS if c in old.columns and c in new.columns]
-    o = old.set_index("record_id")[cols[1:]].astype(str)
-    n = new.set_index("record_id")[cols[1:]].astype(str)
+    norm = lambda d: d.set_index("record_id")[cols[1:]].astype(object).where(lambda x: x.notna(), "").astype(str)
+    o, n = norm(old), norm(new)
     added = n.index.difference(o.index)
     both = n.index.intersection(o.index)
     diff = (o.loc[both] != n.loc[both]).any(axis=1)

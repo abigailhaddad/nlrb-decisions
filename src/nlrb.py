@@ -112,7 +112,7 @@ CITE = re.compile(r"^(\d+) NLRB (No\. )?(\d+)")
 
 def parse_citation(c):
     """'375 NLRB No. 68' -> (375, 'slip', 68); '300 NLRB 1065' -> (300, 'page', 1065); else (None, None, None)."""
-    m = CITE.match(c or "")
+    m = CITE.match(c) if isinstance(c, str) else None
     if not m:
         return None, None, None
     if int(m.group(1)) == 0:  # NLRB shows "00 NLRB No. 00" for some decisions with no number
