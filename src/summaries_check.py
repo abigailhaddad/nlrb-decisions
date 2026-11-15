@@ -96,6 +96,22 @@ def coverage(s, d):
     nosum = inrange[~inrange["record_id"].isin(matched_ids)]
     rev = inrange.assign(has_summary=inrange["record_id"].isin(matched_ids)).groupby(
         ["listing", inrange["issuance_date"].str[:4]])["has_summary"].agg(["size", "sum"])
+    # rows with no summary: does any summary entry carry the row's case number, and how close in date?
+    by_c = {}
+    for x in s.itertuples():
+        for c in (x.case_numbers or "").split("; "):
+            by_c.setdefault(B.case_key(c), []).append(x.date)
+
+    def why_none(row):
+        dates = by_c.get(B.case_key(row.case_number))
+        if not dates:
+            return "the row's case number is in no summary entry"
+        gaps = [abs((datetime.date.fromisoformat(row.issuance_date) - datetime.date.fromisoformat(t)).days)
+                for t in dates if isinstance(t, str) and lo <= t <= hi]
+        if gaps and min(gaps) <= 7:
+            return "a summary entry with the row's case number is dated within 7 days (left unmatched)"
+        return "the row's case number is in summary entries, but only at other dates"
+    nosum_why = nosum.apply(why_none, axis=1)
     dup = s["record_id"].dropna()
     cm = s[s["record_id"].notna() & s["match_note"].notna()].merge(d[["record_id", "citation"]], on="record_id", suffixes=("", "_listing"))
     page_form = cm["citation"].map(B.cite_key).map(lambda k: k and k[1]) & cm["citation_listing"].map(B.cite_key).map(lambda k: bool(k) and not k[1]) \
@@ -119,6 +135,7 @@ def coverage(s, d):
         "records_matched_by_more_than_one_entry": int(dup.duplicated().sum()),
         "rows_in_entry_date_range": len(inrange), "rows_in_range_with_summary": int(len(inrange) - len(nosum)),
         "rows_in_range_without_summary_by_listing": nosum["listing"].value_counts().to_dict(),
+        "rows_in_range_without_summary_by_reason": nosum_why.value_counts().to_dict(),
         "rows_in_range_by_listing_year": [{"listing": k[0], "year": k[1], "rows": int(v["size"]), "with_summary": int(v["sum"])}
                                           for k, v in rev.iterrows()],
     }
@@ -129,6 +146,13 @@ def coverage(s, d):
                        "bucket", "nearest_gap_days", "nearest_listing"])
     print(json.dumps({k: v for k, v in out.items() if k not in ("rows_in_range_by_listing_year", "unmatched_bucket_by_section")}, indent=1))
     return out, un, nosum
+
+
+def name_sim(a, b):
+    """Share of the listing name's words (3+ letters, lowercased) that appear in the summary's case name."""
+    w = lambda t: set(re.findall(r"[a-z]{3,}", (t or "").lower())) - {"inc", "llc", "the", "and", "company", "corp", "d/b/a"}
+    lb = w(b)
+    return round(len(lb & w(a)) / len(lb), 2) if lb else None
 
 
 def norm(t):
@@ -157,7 +181,8 @@ def pick(s, n, rng=20261115):
     add("matched, ALJ section", m[m["section"] == "alj"], 2)
     add("matched, unpublished section", m[m["section"] == "unpublished"], 2)
     add("matched, Board section by citation", m[m["match_method"] == "citation"], 1)
-    add("matched by case number + date although the summary's citation disagrees", m[m["match_note"].notna()], 2)
+    add("matched by case number + date; the summary's citation is not on the listing (usually now a bound-volume page)", m[m["match_note"].notna()], 2)
+    add("unmatched: the summary's citation disagrees with the row found", s[s["match_note"].fillna("").str.contains("has citation|citation conflict")], 1)
     add("matched, ALJ date read from the summary text", m[m["date_source"] == "summary text"], 1)
     oldest = s[s["week_posted"] == s["week_posted"].min()]
     newest = s[s["week_posted"] == s["week_posted"].max()]
@@ -184,7 +209,7 @@ def sample(s, d, n):
     cache, results = {}, []
     dd = d.set_index("record_id")
     for sid, why in picks.items():
-        e = s[s["summary_id"] == sid].iloc[0].to_dict()
+        e = {k: (None if isinstance(v, float) and pd.isna(v) else v) for k, v in s[s["summary_id"] == sid].iloc[0].to_dict().items()}
         live = live_week_text(e["week_url"], cache)
         header_on_page = norm(e["header"]) in live
         text_on_page = norm(e["summary_text"]) in live if e["summary_text"] else None
@@ -203,11 +228,21 @@ def sample(s, d, n):
             res["case_number_agrees"] = bool(row) and B.case_key(row["case_number"]) in cases
             res["date_agrees"] = bool(row) and row["issuance_date"] == e["date"]
             res["citation_agrees"] = None if not e["citation"] else bool(row) and B.cite_key(row.get("citation")) == B.cite_key(e["citation"])
+            res["citation_compatible"] = None if not e["citation"] else bool(row) and B.citations_compatible(e["citation"], row.get("citation"))
+            res["case_name_similarity"] = name_sim(e["case_name"], row["case_name"]) if row else None
         results.append(res)
         print(sid, why, header_on_page, text_on_page, res.get("case_number_agrees"), res.get("date_agrees"), flush=True)
     json.dump(results, open(f"checks/summaries_sample_{TODAY}.json", "w"), indent=1, ensure_ascii=False)
     write_md(results)
     return results
+
+
+def cite_cell(x):
+    if x.get("citation_agrees") is None:
+        return "n/a"
+    if x["citation_agrees"]:
+        return "same"
+    return "bound-volume page" if x.get("citation_compatible") else "**NO**"
 
 
 def write_md(results):
@@ -223,7 +258,11 @@ def write_md(results):
           f"- summary text found on the live week page: {sum(bool(x['summary_on_live_page']) for x in results)} of {sum(x['summary_on_live_page'] is not None for x in results)} with text",
           f"- matched entries: {len(m)}; live listing row found: {sum(x['listing_found'] for x in m)}; case number agrees: "
           f"{sum(x['case_number_agrees'] for x in m)}; date agrees: {sum(x['date_agrees'] for x in m)}; citation agrees: "
-          f"{sum(x['citation_agrees'] is True for x in m)} of {sum(x['citation_agrees'] is not None for x in m)} with a citation", "",
+          f"{sum(x['citation_agrees'] is True for x in m)} of {sum(x['citation_agrees'] is not None for x in m)} with a citation identical, "
+          f"{sum(x['citation_compatible'] is True and x['citation_agrees'] is False for x in m)} where the listing now shows the bound-volume page "
+          f"instead of the summary's slip number, {sum(x['citation_compatible'] is False for x in m)} incompatible",
+          f"- case names: share of the live listing name's words found in the summary's case name, median "
+          f"{sorted(x['case_name_similarity'] for x in m if x['case_name_similarity'] is not None)[len(m) // 2]}; the lowest are listed below the table", "",
           "| # | why picked | week page | header (from the week page) | match | live listing row | case no. | date | citation | text on page |",
           "|---|---|---|---|---|---|---|---|---|---|"]
     yn = lambda v: "n/a" if v is None else ("yes" if v else "**NO**")
@@ -235,7 +274,10 @@ def write_md(results):
             match += f" (note: {esc(x['match_note'])})"
         md.append(f"| {i} | {esc(x['why'])} | [week]({x['week_url']}) | {esc(x['header'])} | {match} | {live} | "
                   f"{yn(x.get('case_number_agrees')) if x['record_id'] else ''} | {yn(x.get('date_agrees')) if x['record_id'] else ''} | "
-                  f"{yn(x.get('citation_agrees')) if x['record_id'] else ''} | {yn(x['header_on_live_page'])} / {yn(x['summary_on_live_page'])} |")
+                  f"{cite_cell(x) if x['record_id'] else ''} | {yn(x['header_on_live_page'])} / {yn(x['summary_on_live_page'])} |")
+    low = sorted((x for x in m if x["case_name_similarity"] is not None), key=lambda x: x["case_name_similarity"])[:5]
+    md += ["", "Lowest case-name word overlap. Each was read by hand: the same party, with the name spelled out, shortened or misspelled on one side:", ""]
+    md += [f"- {x['case_name_similarity']}: summary \"{esc(x['header'][:120])}\" / listing \"{esc(x['live_case_name'])}\"" for x in low]
     md += ["", "## Summary text of each entry (first 300 characters)", ""]
     for i, x in enumerate(results, 1):
         md.append(f"{i}. {esc(x['summary_start'])}")

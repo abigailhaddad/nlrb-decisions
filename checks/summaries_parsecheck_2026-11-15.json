@@ -1,0 +1,61 @@
+{
+ "weeks_where_counts_differ": [
+  {
+   "week_url": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-the-week-of-march-28-april",
+   "loose_header_paragraphs": 25,
+   "parsed_entries": 26
+  },
+  {
+   "week_url": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-december-16-20-0",
+   "loose_header_paragraphs": 12,
+   "parsed_entries": 13
+  },
+  {
+   "week_url": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-december-2-6-2013",
+   "loose_header_paragraphs": 23,
+   "parsed_entries": 24
+  },
+  {
+   "week_url": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-july-23-27-2012",
+   "loose_header_paragraphs": 15,
+   "parsed_entries": 16
+  },
+  {
+   "week_url": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-july-5-8-2016",
+   "loose_header_paragraphs": 14,
+   "parsed_entries": 15
+  },
+  {
+   "week_url": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-july-9-13-2018",
+   "loose_header_paragraphs": 6,
+   "parsed_entries": 7
+  },
+  {
+   "week_url": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-june-2-6-2014",
+   "loose_header_paragraphs": 18,
+   "parsed_entries": 19
+  },
+  {
+   "week_url": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-june-29-july-2-0",
+   "loose_header_paragraphs": 12,
+   "parsed_entries": 13
+  },
+  {
+   "week_url": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-may-1-5-2017",
+   "loose_header_paragraphs": 12,
+   "parsed_entries": 13
+  },
+  {
+   "week_url": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-september-17-21-0",
+   "loose_header_paragraphs": 32,
+   "parsed_entries": 33
+  }
+ ],
+ "summary_paragraphs_that_look_like_headers": [],
+ "prose_like_case_names": [
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-august-13-17-2012#6",
+   "case_name": "*The following decision was inadvertently issued and has been revoked: Kirkstall Road Enterprises, Inc. / Quay Street Enterprises, Inc."
+  }
+ ]
+}
