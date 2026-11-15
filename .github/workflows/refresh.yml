@@ -4,7 +4,7 @@ name: Refresh NLRB decisions
 # 9 requests about a second apart, and merge them into the Hugging Face table. Uploads only if a row was
 # added or changed. Needs the repository secret HF_TOKEN (write access to abigailhaddad/nlrb-decisions);
 # without it the run still fetches and checks, then skips the upload with a message. A failed run emails
-# the owner.
+# the owner. A second step does the same for the weekly summaries (summaries.parquet).
 
 on:
   schedule:
@@ -37,6 +37,11 @@ jobs:
             echo "::notice::HF_TOKEN secret is empty, so this run fetches and merges but does not upload. Add the secret to publish."
           fi
           python src/refresh.py
+
+      # Weekly summaries: read the first 2 pages of the weekly-summaries index and fetch any week not yet in
+      # summaries.parquet (usually 0 or 1 page), match against the decisions table just written, upload if new.
+      - name: Refresh weekly summaries
+        run: python src/summaries_refresh.py
 
       # GitHub disables scheduled workflows in a public repo after 60 days with no commits.
       - name: Keepalive commit

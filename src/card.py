@@ -1,9 +1,9 @@
 """Write the Hugging Face dataset card (out/README.md) from out/decisions.parquet, out/report.json and
 out/gaps.json, so every number on the card comes from the files being published.
 
-    python src/card.py 2026-11-15     # the date the listings were read
+    python src/card.py 2026-11-15 [2026-11-15]   # the date the listings were read [and the weekly summaries]
 """
-import json, sys
+import json, os, sys
 import pandas as pd
 
 read_on = sys.argv[1]
@@ -32,6 +32,57 @@ slipcheck = json.load(open(f"checks/slip_gaps_live_{read_on}.json"))
 assert all(x["live_rows_with_this_citation"] == (0 if x["kind"] == "missing" else 2) for x in slipcheck)
 assert ra["only_in_full_pass"] == a_0001 and ra["only_in_second_pass"] == 0, "ALJ passes: explain the new gap"
 
+# weekly summaries (summaries.parquet), if built: python src/summaries_build.py, then summaries_check.py coverage/sample
+summaries_section, summaries_config = "", ""
+sum_date = sys.argv[2] if len(sys.argv) > 2 else read_on
+if os.path.exists("out/summaries.parquet"):
+    sm = pd.read_parquet("out/summaries.parquet")
+    cov = json.load(open(f"checks/summaries_coverage_{sum_date}.json"))
+    ssample = json.load(open(f"checks/summaries_sample_{sum_date}.json"))
+    assert cov["entries"] == len(sm), "coverage file is from a different build"
+    pct = lambda a, b: f"{100 * a / b:.1f}%" if b else "n/a"
+    sec_names = {"board": "Summarized Board decisions (published)", "unpublished": "Unpublished Board decisions",
+                 "alj": "Administrative law judge decisions", "appellate": "Appellate court decisions"}
+    rows_sec = "\n".join(
+        f"| {sec_names.get(k, k)} | `{k}` | {n(v['entries'])} | {n(v['matched'])} | {pct(v['matched'], v['entries'])} |"
+        for k, v in sorted(cov["by_section"].items(), key=lambda kv: -kv[1]["entries"]))
+    nonapp = sm[sm["section"] != "appellate"]
+    m_all = int(nonapp["record_id"].notna().sum())
+    bucket = "\n".join(f"  - {v:,}: {k}" for k, v in cov["unmatched_bucket"].items())
+    rng = cov["entry_dates"]
+    by_l = {}
+    for x in cov["rows_in_range_by_listing_year"]:
+        a = by_l.setdefault(x["listing"], [0, 0]); a[0] += x["rows"]; a[1] += x["with_summary"]
+    rev = "; ".join(f"{k} {pct(v[1], v[0])} ({n(v[1])} of {n(v[0])})" for k, v in sorted(by_l.items()))
+    sm_rand = [x for x in ssample if x["why"] == "random matched pair"]
+    sm_matched = [x for x in ssample if x["record_id"]]
+    ok = lambda x: x["listing_found"] and x["case_number_agrees"] and x["date_agrees"] and x["citation_agrees"] is not False
+    summaries_config = """
+- config_name: summaries
+  data_files: summaries.parquet"""
+    summaries_section = f"""
+## Weekly summaries (`summaries.parquet`)
+
+`summaries.parquet` holds the text of NLRB's weekly [Summary of NLRB Decisions](https://www.nlrb.gov/cases-decisions/decisions/weekly-summaries-decisions) pages, one row per summarized decision. **This is NLRB's own short summary of each decision, written for its weekly newsletter. It is not the decision text**, and NLRB says the summaries are "provided for informational purposes only and [are] not intended to substitute for the opinions of the NLRB."
+
+{n(len(sm))} entries from {cov['weeks']} weekly pages (every week the index listed when it was read, {sum_date}; the earliest entry is dated {rng[0]} and the latest {rng[1]}). The pages start in January 2011.
+
+| section of the weekly page | `section` | entries | matched to a row in `decisions.parquet` | rate |
+|---|---|---|---|---|
+{rows_sec}
+
+Columns: `summary_id` (week slug and position), `record_id` (the matched row in `decisions.parquet`, or blank), `match_method`, `match_note`, `week_url`, `week_title`, `week_posted`, `section`, `subsection` (e.g. "R Cases"), `entry_index`, `case_name`, `case_numbers` (from the header, `; `-separated, normalized to `NN-XX-NNNNNN` without leading zeros in the number), `header_parenthetical` (as written), `citation`, `jd_number`, `reported_at` and `court` (appellate entries), `place`, `date` (YYYY-MM-DD), `date_source` (`header`, or `summary text` when the date came from "issued his decision on ..."), `header_date_text`, `header` (the entry's first line as written) and `summary_text` (as written apart from whitespace; paragraphs separated by a blank line).
+
+How entries were matched to `decisions.parquet` rows: first by citation (the row must also share a case number or the date), then by one of the header's case numbers plus the exact date. A match is made only when exactly one row qualifies; otherwise `record_id` is blank and `match_note` says why. Appellate entries describe court decisions, which are not in `decisions.parquet`, and are never matched.
+
+- Of the {n(len(nonapp))} Board, unpublished and ALJ entries, {n(m_all)} ({pct(m_all, len(nonapp))}) are matched: {n(cov['match_method'].get('citation', 0))} by citation and {n(cov['match_method'].get('case number + date', 0))} by case number and date. {cov['matched_with_citation_note']} of the case-number matches have a citation in the summary that disagrees with the listing (noted in `match_note`).
+- The {n(cov['unmatched_excluding_appellate'])} unmatched entries, by reason:
+{bucket}
+- {n(cov['records_matched_by_more_than_one_entry'])} rows of `decisions.parquet` are matched by more than one summary entry.
+- The other direction: of the {n(cov['rows_in_entry_date_range'])} rows in `decisions.parquet` issued between {rng[0]} and {rng[1]}, {n(cov['rows_in_range_with_summary'])} have a matched summary. By listing: {rev}. NLRB's weekly pages do not summarize every decision on its listings.
+- Live spot check, `checks/summaries_sample_{sum_date}.md` in the GitHub repo: {len(ssample)} entries ({len(sm_rand)} random matched pairs plus edge cases). The header was found on the live week page for {sum(x['header_on_live_page'] for x in ssample)} of {len(ssample)} and the summary text for {sum(bool(x['summary_on_live_page']) for x in ssample)}. For {sum(ok(x) for x in sm_matched)} of the {len(sm_matched)} matched entries, NLRB's live listing row for the matched decision shows a case number from the summary header, the same date, and the same citation when the summary gives one.
+"""
+
 card = f"""---
 license: cc0-1.0
 pretty_name: NLRB decisions (listing metadata)
@@ -43,7 +94,7 @@ size_categories:
 - 10K<n<100K
 configs:
 - config_name: default
-  data_files: decisions.parquet
+  data_files: decisions.parquet{summaries_config}
 ---
 
 # NLRB decisions: Board, unpublished Board, and administrative law judge
@@ -81,9 +132,10 @@ Each listing was read twice: page by page (100 rows a page, newest first), and a
 - Slip-opinion numbers in volumes 366 to 375 should run from 1 up without gaps. {missing_recent} numbers are absent from the listing and {repeated_recent} number appears twice ({miss_list}). Each was looked up again on the live listing by volume and slip number: none of the missing numbers is there, and the repeated one shows two decisions. Volumes 365 and earlier are mostly listed by bound-volume page, so their slip numbers can't be checked this way.
 - A live spot check of {len(sample)} rows (25 random, 10 random from 2011 on, and {len(sample) - 35} edge cases) is in the GitHub repo, `checks/sample_{read_on}.md`. Each row was looked up again in its listing, filtered to that one decision: {sum(x['all_listing_fields_match'] for x in sample)} of {len(sample)} matched on every field, and the one difference is the 01/01/0001 date this table blanks on purpose. Each row's case page was also read: {sum(x['docket_match'] for x in sample)} docket entries link the same document on the same date. {sum(x['case_page_empty'] for x in sample)} case pages (mostly decisions before 2010) have no docket to compare, and for the rest see the file.
 
+{summaries_section}
 ## Caveats
 
-- No decision text and no Board members. The documents sit under `apps.nlrb.gov/link/`, which NLRB's robots.txt disallows, so they were not fetched.
+- No decision text and no Board members. The documents sit under `apps.nlrb.gov/link/`, which NLRB's robots.txt disallows, so they were not fetched. `summaries.parquet` has NLRB's weekly summaries, which are not the decisions.
 - {n(o['date_shown_as_01/01/0001'])} ALJ decisions are dated 01/01/0001 on the listing; `issuance_date` is blank for those (and for {n(o['no_date'] - o['date_shown_as_01/01/0001'])} rows the listing gives no date). {o['board_date_over_2_years_from_volume_median']} Board decisions have a date more than two years from the median date of their volume, including {o['date_before_nlra_1935-07-05']} dated before the NLRA was signed (1935-07-05). They are kept as listed; they look like data-entry errors on NLRB's side.
 - Long case names are often cut off. {n(o['case_name_exactly_100_chars'])} names are exactly 100 characters long, against a few dozen at each nearby length, and the ones I looked at stop mid-word (e.g. "...Red Rock Station, Sant"). Treat a 100-character name as truncated. The cut isn't applied everywhere: {n(o['case_name_over_100_chars'])} names are longer than 100.
 - {o['board_blank_citation']} Board decisions have no citation and {o['board_placeholder_citation']} show `00 NLRB No. 00`. {n(o['board_citation_shared_by_2plus_documents'])} rows share a citation with at least one other document (NLRB lists more than one document under that citation; I didn't check why).

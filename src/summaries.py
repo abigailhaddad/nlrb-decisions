@@ -21,8 +21,8 @@ MONTHS = "January|February|March|April|May|June|July|August|September|October|No
 DATE = re.compile(r"(%s)\.?\s+(\d{1,2})\s*,?\s*(\d{4})" % MONTHS)
 MONTH_NO = {m: i + 1 for i, m in enumerate(MONTHS.split("|"))}
 DASH = "-‐‑‒–—"
-CASE_TOKEN = r"\d(?: ?\d)?\s*[%s]\s*[A-Z]{1,2}\s*[%s]\s*\d{1,6}" % (DASH, DASH)
-CASE_FULL = re.compile(r"(\d(?: ?\d)?)\s*[%s]\s*([A-Z]{1,2})\s*[%s]\s*(\d{1,6})" % (DASH, DASH))
+CASE_TOKEN = r"\d(?: ?\d)?\s*[%s]\s*[A-Z]{1,2}\s*[%s]?\s*\d{1,6}" % (DASH, DASH)
+CASE_FULL = re.compile(r"(\d(?: ?\d)?)\s*[%s]\s*([A-Z]{1,2})\s*[%s]?\s*(\d{1,6})" % (DASH, DASH))
 CITE = re.compile(r"(\d{1,3})\s+NLRB\s+(No\.\s*)?(\d{1,5})")
 JD = re.compile(r"JD(?:\s*\(\s*[A-Z]{2,4}\s*\))?[%s\s]*\d+\s*[%s]\s*\d{2,4}" % (DASH, DASH))
 NOISE = re.compile(r"^(\*+|No .{0,60}(Issued|Decisions)\.?|None\.?)$", re.I)
@@ -61,9 +61,11 @@ def blocks(body):
 
 def section_of(t):
     """Section name if this block is a section heading, else None."""
-    if len(t) > 140:
+    if len(t) > 140 or re.search(CASE_TOKEN, t):  # headings never carry a case number
         return None
     s = t.lower()
+    if "decision" not in s or s.endswith("here.") or "opinion" in s or "judgment" in s:
+        return None  # e.g. "The Court's unpublished opinion is here."
     if "appellate" in s or ("court" in s and "decision" in s):
         return "appellate"
     if "administrative law judge" in s and ("decision" in s or s.startswith("administrative")):
@@ -113,6 +115,10 @@ def split_header(t):
             depth -= 1
             if depth == 0:
                 return _M({"name": t[:i].rstrip(" ,"), "paren": t[i + 1:j], "rest": t[j + 1:].lstrip(" ,")})
+    # unbalanced, e.g. "(29-CA-280153, et al.; JD(NY-01-23) Staten Island": close at the last ")" nearby
+    j = t.rfind(")", i, i + 150)
+    if j > i:
+        return _M({"name": t[:i].rstrip(" ,"), "paren": t[i + 1:j], "rest": t[j + 1:].lstrip(" ,")})
     return None
 
 
@@ -120,7 +126,7 @@ class HEAD:
     match = staticmethod(split_header)
 
 
-APPELLATE = re.compile(r"^(?P<name>.+?),?\s*(?:NLRB\s+)?Board\s+(?:Case\s+)?(?:Nos?\.?\s*)?(?P<paren>(?:%s).*?)\s*\((?P<court>[^()]*?\d{4}[^()]*?)\)\s*\.?\s*(?P<rest>.*)$" % CASE_TOKEN, re.S)
+APPELLATE = re.compile(r"^(?P<name>.+?),?\s*(?:(?:NLRB\s+)?Board\s+(?:Case\s+)?(?:Nos?\.?\s*)?|Nos?\.\s*)(?P<paren>(?:%s).*)$" % CASE_TOKEN, re.S)
 
 
 def case_numbers(paren):
@@ -144,25 +150,29 @@ def iso(m):
 def parse_header(t, section):
     """Header fields of an entry's first paragraph, or None if it doesn't look like an entry header."""
     if section == "appellate":
+        # "Name, Board Case No. 16-CA-363860 (reported at 374 NLRB No. 36) (5th Cir. Nov. 3, 2026)": one paragraph
         m = APPELLATE.match(t)
-        if not m or len(m.group("name")) > 250:
+        if not m or len(t) > 600 or len(m.group("name")) > 400:
             return None
-        cite = CITE.search(m.group("paren"))
-        d = DATE.search(m.group("court"))
-        abbrev = re.search(r"(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)[a-z]*\.?\s+(\d{1,2}),\s*(\d{4})", m.group("court"))
-        date = iso(d) if d else None
-        if not date and abbrev:
-            mon = {"Sept": 9}.get(abbrev.group(1)) or ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct",
-                                                      "Nov", "Dec"].index(abbrev.group(1)[:3]) + 1
-            date = f"{int(abbrev.group(3)):04d}-{mon:02d}-{int(abbrev.group(2)):02d}"
-        return {"case_name": m.group("name").strip(" ,"), "header_parenthetical": m.group("paren").strip(),
-                "case_numbers": case_numbers(m.group("paren")), "citation": None,
-                "reported_at": cite.group(0) if cite else None, "jd_number": None,
-                "place": None, "court": m.group("court").strip(), "date": date,
-                "date_source": "header" if date else None,
-                "header_date_text": m.group("court").strip(), "rest": m.group("rest")}
+        tail = m.group("paren")
+        cites = [c.group(0) for c in CITE.finditer(tail)]
+        court = re.search(r"\(?([^()]*\b(?:Cir|Circuit|Court|Supreme|D\.C\.)\b[^()]*\d{4}[^()]*)\)?", tail)
+        courttxt = court.group(1).strip(" ,.()") if court else None
+        date = None
+        if courttxt:
+            d = DATE.search(courttxt)
+            ab = re.search(r"\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+(\d{1,2}),\s*(\d{4})", courttxt)
+            if d:
+                date = iso(d)
+            elif ab:
+                mon = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].index(ab.group(1)) + 1
+                date = f"{int(ab.group(3)):04d}-{mon:02d}-{int(ab.group(2)):02d}"
+        return {"case_name": m.group("name").strip(" ,"), "header_parenthetical": tail.strip(),
+                "case_numbers": case_numbers(tail.split("(")[0] if "(" in tail else tail), "citation": None,
+                "reported_at": "; ".join(cites) or None, "jd_number": None, "place": None, "court": courttxt,
+                "date": date, "date_source": "header" if date else None, "header_date_text": courttxt, "rest": ""}
     m = HEAD.match(t)
-    if not m or len(m.group("name")) > 300:
+    if not m or len(m.group("name")) > 700:
         return None
     paren = m.group("paren")
     cn = case_numbers(paren)
@@ -235,10 +245,13 @@ def parse_week(page, where=None):
             close()
             sub = t  # e.g. "R Cases", "C Cases"
             continue
-        h = parse_header(t, section) if (starts_with_name(chunk) or section == "appellate") else None
+        # appellate headers are one paragraph that opens with the name in bold or ends with "(5th Cir. ...)"
+        appellate_like = section == "appellate" and (starts_with_name(chunk) or t.rstrip(" .").endswith(")"))
+        h = parse_header(t, section) if (starts_with_name(chunk) and section != "appellate") or appellate_like else None
         if h is None and section != "appellate":
             h2 = parse_header(t, section)  # header without bold name; accept only a clean match
-            if h2 and h2["date"] and len(h2["case_name"]) < 150:
+            if h2 and h2["date"] and (h2["date_source"] == "header" or section == "alj") and \
+                    not re.search(r"\b(the Board|found|adopted|denied|issued|granted)\b", h2["case_name"]):
                 h = h2
         if h:
             close()

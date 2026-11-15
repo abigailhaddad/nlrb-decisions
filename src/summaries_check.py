@@ -231,11 +231,49 @@ def write_md(results):
     open(f"checks/summaries_sample_{TODAY}.md", "w").write("\n".join(md) + "\n")
 
 
+def parsecheck(s):
+    """A second, looser read of the saved week pages, to find entries the parser may have merged or split.
+
+    For each week, count paragraphs that look like an entry header by a loose rule (a parenthesis opening
+    with a case number within the first 700 characters, any formatting), and compare with the parser's
+    non-appellate entries. Also flag paragraphs inside a summary that look like a header (a missed split) and
+    case names that read like prose (a false split)."""
+    import gzip
+    loose = re.compile(r"^.{3,700}?\(\s*\d{1,2}\s*[%s]\s*[A-Z]{1,2}" % S.DASH, re.S)
+    out = {"weeks_where_counts_differ": [], "summary_paragraphs_that_look_like_headers": [], "prose_like_case_names": []}
+    for url, g in s.groupby("week_url"):
+        slug = url.rsplit("/", 1)[1]
+        page = gzip.open(f"raw/summaries/weeks/{slug}.html.gz", "rt", encoding="utf-8").read()
+        body = S.body_html(page) or ""
+        sec, n_loose = None, 0
+        for t, chunk in S.blocks(body):
+            sx = S.section_of(t)
+            if sx:
+                sec = sx
+                continue
+            if sec in ("board", "unpublished", "alj") and loose.match(t) and not re.match(r"(?i)(charges? filed|petitioner|administrative law judge|the board|in )", t):
+                n_loose += 1
+        n_parsed = int((g["section"] != "appellate").sum())
+        if n_loose != n_parsed:
+            out["weeks_where_counts_differ"].append({"week_url": url, "loose_header_paragraphs": n_loose, "parsed_entries": n_parsed})
+    for r in s.itertuples():
+        for para in (r.summary_text or "").split("\n\n")[1:]:
+            if loose.match(para) and S.HEAD.match(para) and S.DATE.search(para[:400]) and r.section != "appellate":
+                out["summary_paragraphs_that_look_like_headers"].append({"summary_id": r.summary_id, "text": para[:200]})
+        if re.search(r"\b(the Board|found|adopted|denied|granted|issued)\b", r.case_name or ""):
+            out["prose_like_case_names"].append({"summary_id": r.summary_id, "case_name": r.case_name[:200]})
+    json.dump(out, open(f"checks/summaries_parsecheck_{TODAY}.json", "w"), indent=1, ensure_ascii=False)
+    print({k: len(v) for k, v in out.items()})
+    return out
+
+
 if __name__ == "__main__":
     what = sys.argv[1] if len(sys.argv) > 1 else ""
     if what == "coverage":
         s, d = load(sys.argv[2] if len(sys.argv) > 2 else "out/decisions.parquet")
         coverage(s, d)
+    elif what == "parsecheck":
+        parsecheck(pd.read_parquet("out/summaries.parquet"))
     elif what == "sample":
         n = int(sys.argv[2]) if len(sys.argv) > 2 else 30
         s, d = load(sys.argv[3] if len(sys.argv) > 3 else "out/decisions.parquet")
