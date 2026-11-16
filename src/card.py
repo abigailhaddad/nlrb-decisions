@@ -38,6 +38,11 @@ sum_date = sys.argv[2] if len(sys.argv) > 2 else read_on
 if os.path.exists("out/summaries.parquet"):
     sm = pd.read_parquet("out/summaries.parquet")
     cov = json.load(open(f"checks/summaries_coverage_{sum_date}.json"))
+    rp = f"checks/summaries_report_{sum_date}.json"
+    empty = json.load(open(rp)).get("weeks_with_no_entries", []) if os.path.exists(rp) else []
+    # Weeks NLRB posted with nothing in them ("No Published Decisions Issued"), so they add no entries.
+    empty_weeks_note = (f"; the index listed {cov['weeks'] + len(empty)}, and the other {len(empty)} say no decisions were issued that week"
+                        if empty else "")
     ssample = json.load(open(f"checks/summaries_sample_{sum_date}.json"))
     assert cov["entries"] == len(sm), "coverage file is from a different build"
     pct = lambda a, b: f"{100 * a / b:.1f}%" if b else "n/a"
@@ -65,7 +70,7 @@ if os.path.exists("out/summaries.parquet"):
 
 `summaries.parquet` holds the text of NLRB's weekly [Summary of NLRB Decisions](https://www.nlrb.gov/cases-decisions/decisions/weekly-summaries-decisions) pages, one row per summarized decision. **This is NLRB's own short summary of each decision, written for its weekly newsletter. It is not the decision text**, and NLRB says the summaries are "provided for informational purposes only and [are] not intended to substitute for the opinions of the NLRB."
 
-{n(len(sm))} entries from {cov['weeks']} weekly pages (every week the index listed when it was read, {sum_date}; the earliest entry is dated {rng[0]} and the latest {rng[1]}). The pages start in January 2011. {len(cov['entries_with_implausible_dates'])} entries carry a year NLRB mistyped (e.g. "May 7, 9012"); `date` keeps what the page says, and those entries are left out of the date range above. NLRB lists a few weeks twice under different addresses; `duplicate_of` marks the {n(int(sm['duplicate_of'].notna().sum()))} entries that repeat an earlier one word for word. {cov.get('section_notes', 13)} short notes on the pages that are not entries (e.g. "The following cases involve prior rulings by the two-member Board") are not in the table; they are listed in `out/summaries_report.json` in the GitHub repo.
+{n(len(sm))} entries from {cov['weeks']} weekly pages, read {sum_date}{empty_weeks_note}. The earliest entry is dated {rng[0]} and the latest {rng[1]}. The pages start in January 2011. {len(cov['entries_with_implausible_dates'])} entries carry a year NLRB mistyped (e.g. "May 7, 9012"); `date` keeps what the page says, and those entries are left out of the date range above. NLRB lists a few weeks twice under different addresses; `duplicate_of` marks the {n(int(sm['duplicate_of'].notna().sum()))} entries that repeat an earlier one word for word. {cov.get('section_notes', 13)} short notes on the pages that are not entries (e.g. "The following cases involve prior rulings by the two-member Board") are not in the table; they are listed in `out/summaries_report.json` in the GitHub repo.
 
 | section of the weekly page | `section` | entries | matched to a row in `decisions.parquet` | rate |
 |---|---|---|---|---|
