@@ -61,27 +61,3 @@ If more than 300 entries were added to one listing between runs, some would be p
 The daily workflow builds `nlrb-decisions.sqlite` from the files on Hugging Face (tables `decisions` and `summaries`, plus `_source`, which records the Hugging Face commit) and attaches it to the GitHub release [`latest-data`](https://github.com/abigailhaddad/nlrb-decisions/releases/tag/latest-data). The release is replaced whenever the Hugging Face commit changes. To build it yourself:
 
     python src/build_sqlite.py data nlrb-decisions.sqlite
-
-## Zenodo archive
-
-`.github/workflows/zenodo.yml` runs on the 3rd of each month and uploads the parquet files and the dataset card to Zenodo as a new version of one record, so the dataset has a citable DOI (the concept DOI covers every version; each month's version gets its own). It does nothing if the files haven't changed since the last version, and it skips with a notice, without failing, until the `ZENODO_TOKEN` secret exists. Metadata is in `.zenodo.json`.
-
-Setup, sandbox first (the sandbox is a separate site with separate accounts and tokens, and its DOIs are not real):
-
-1. Make an account at https://sandbox.zenodo.org. Under your name, Applications, Personal access tokens, New token: tick `deposit:write` and `deposit:actions` only.
-2. Add the token to this repo and point the workflow at the sandbox, leaving drafts unpublished:
-
-       gh secret set ZENODO_TOKEN -R abigailhaddad/nlrb-decisions          # paste the sandbox token
-       gh variable set ZENODO_API -R abigailhaddad/nlrb-decisions --body https://sandbox.zenodo.org/api
-       gh variable set ZENODO_PUBLISH -R abigailhaddad/nlrb-decisions --body false
-
-3. Run it: `gh workflow run zenodo.yml -R abigailhaddad/nlrb-decisions`. The log links the draft. Check the title, creator, CC0 license and the three files on the sandbox site.
-4. `gh variable set ZENODO_PUBLISH -R abigailhaddad/nlrb-decisions --body true` and run it again: it publishes the draft and logs the DOI and concept DOI. Run once more; it should say the files are unchanged.
-
-Then production:
-
-5. Make an account at https://zenodo.org and a token with the same two scopes.
-6. `gh secret set ZENODO_TOKEN ...` with the production token, `gh variable delete ZENODO_API -R abigailhaddad/nlrb-decisions` (production is the default), and `ZENODO_PUBLISH` false for the first run so you can look at the draft on zenodo.org before publishing. A published version can't be deleted.
-7. Set `ZENODO_PUBLISH` to true and run again. Put the concept DOI from the log in this README and on the dataset card.
-
-Don't turn on Zenodo's GitHub integration for this repo. It reads the same `.zenodo.json` and would archive the code on every GitHub release, and the `latest-data` release is replaced every day the data changes.
