@@ -1,0 +1,92 @@
+# Column descriptions for the published tables. src/data_docs.py reads this file and the parquet files and
+# writes docs/data_dictionary.md; it stops with an error if a parquet column is missing here or a column
+# here is not in the parquet, so the dictionary can't drift from the schema.
+#
+# Each description comes from the code that builds the column (src/nlrb.py, src/build.py, src/summaries.py,
+# src/summaries_build.py, src/summaries_crawl.py) or from NLRB's own pages. A column listed in `unconfirmed`
+# is one whose meaning NLRB doesn't define; the dictionary marks it.
+
+dataset = "abigailhaddad/nlrb-decisions"
+
+[tables.decisions]
+file = "decisions.parquet"
+config = "default"
+grain = "One row per entry on one of NLRB's three decision listings (Board, unpublished Board, administrative law judge)."
+primary_key = "record_id"
+unconfirmed = ["board_outcome"]
+
+[tables.decisions.columns]
+record_id = "Unique row id: `listing|document_id`, e.g. `board|09031d45843ede05`."
+listing = "Which listing the entry is on: `board`, `unpublished` or `alj`."
+listing_title = "The listing's title on nlrb.gov: Board Decisions, Unpublished Board Decisions, Administrative Law Judge Decisions."
+citation = "Board listing only. The citation as listed, e.g. `375 NLRB No. 68` (slip opinion) or `300 NLRB 1065` (bound volume page). A few Board rows are blank or show `00 NLRB No. 00`."
+volume = "NLRB volume number read from `citation`. Blank when the citation is missing, unreadable or `00 NLRB No. 00`."
+citation_form = "How `citation` is written: `slip opinion number` (`375 NLRB No. 68`), `bound volume page` (`300 NLRB 1065`) or `placeholder` (`00 NLRB No. 00`)."
+citation_number = "The slip opinion number or bound volume page read from `citation`."
+case_name = "Case name as listed. A name exactly 100 characters long is usually cut off mid-word on NLRB's listing; some names are longer than 100."
+case_number = "Case number as listed, e.g. `13-CA-393585`. Some old or mistyped numbers have other forms."
+case_number_usual_form = "True if `case_number` matches the usual form: two digits, one or two capital letters, three to six digits (`^\\d{2}-[A-Z]{1,2}-\\d{3,6}$`)."
+issuance_date = "Issuance date, YYYY-MM-DD, from the listing. Blank when the listing shows no date, an unreadable one, or `01/01/0001`."
+issuance_date_raw = "Issuance date exactly as listed (MM/DD/YYYY), including `01/01/0001`."
+year = "First four characters of `issuance_date` (text)."
+jd_number = "ALJ listing only. The listing's JD Number column, as listed."
+judge = "ALJ listing only. The listing's Judge column (the administrative law judge), as listed."
+board_outcome = "ALJ listing only. The listing's Board Outcome column, as listed (e.g. `Pending Board Decision`, `Affirm`, `Adopted/No Exceptions Filed`); often an empty string. NLRB does not define the values."
+document_url = "Link to the decision document on apps.nlrb.gov, from the case name cell of the listing."
+document_id = "NLRB's document id: the hex string after `document.aspx/` in `document_url`."
+case_url = "Link to the case page on nlrb.gov, from the case number cell of the listing."
+
+[tables.summaries]
+file = "summaries.parquet"
+config = "summaries"
+grain = "One row per decision summarized on one of NLRB's weekly Summary of NLRB Decisions pages. NLRB's summary, not the decision text."
+primary_key = "summary_id"
+unconfirmed = ["place"]
+
+[tables.summaries.columns]
+summary_id = "Unique row id: the week page's URL slug, `#`, and `entry_index`."
+record_id = "The matched row in `decisions` (its `record_id`), or blank. A match is made only when exactly one decisions row qualifies; appellate entries are never matched."
+match_method = "How `record_id` was matched: `citation` or `case number + date`. Blank when unmatched."
+match_note = "Why the entry is unmatched, or a note on a match (e.g. `citation not in table`)."
+duplicate_of = "`summary_id` of an earlier entry with the same header (ignoring spacing) and the same summary text. NLRB posts some weeks twice under different addresses; both copies are kept."
+week_url = "URL of the weekly summary page."
+week_title = "Title of the week as shown on NLRB's weekly-summaries index."
+week_posted = "Date shown next to the week on the weekly-summaries index (its `<time datetime>`), YYYY-MM-DD."
+section = "Section of the week page the entry is under: `board` (summarized/published Board decisions), `unpublished`, `alj` or `appellate` (court decisions)."
+subsection = "Sub-heading within the section as written on the page, e.g. `C Cases`, `R Cases` (almost all on unpublished entries). Blank when there is none; a few odd values (e.g. `* **`) are as found."
+entry_index = "Position of the entry on its week page, counting from 0."
+case_name = "Case name from the entry's header, as written."
+case_numbers = "Case numbers from the header, `; `-separated, normalized to `NN-XX-N` with no leading zeros in the last part (so `21-CA-073942` becomes `21-CA-73942`)."
+header_parenthetical = "Board, unpublished and ALJ entries: the text inside the header's parentheses (case numbers, citation, JD number). Appellate entries: the header from the first case number on."
+citation = "Board entries only: the NLRB citation from the header, e.g. `375 NLRB No. 25`."
+jd_number = "ALJ entries (and one unpublished entry): the JD number from the header, as written, e.g. `JD-05-21` or `JD(SF)-37-24`."
+reported_at = "Appellate entries only: the NLRB citation(s) of the Board decision the court reviewed, from the header (`reported at 374 NLRB No. 36`), `; `-separated."
+court = "Appellate entries only: the court, as written in the header (e.g. `5th Cir.`, `D.C. Cir.`)."
+place = "Board, unpublished and ALJ entries: text between the header's closing parenthesis and the date (or the first sentence end), usually a city and state (e.g. `Compton, CA`). NLRB does not say whose location it is."
+date = "YYYY-MM-DD. Board, unpublished and ALJ entries: the date in the header, or for ALJ entries the date in `issued ... decision on <date>` in the summary text. Appellate entries: the last date in the header (the court's decision date). Kept as written even when NLRB mistyped the year."
+date_source = "Where `date` came from: `header` or `summary text`. Blank when there is no date."
+header_date_text = "The date as written on the page, before conversion."
+header = "The entry's header as written: the case name, the parenthetical, and place and date."
+summary_text = "NLRB's summary as written, apart from whitespace (tags removed, entities decoded, runs of spaces made one); paragraphs separated by a blank line."
+
+# How the tables join. `kind` is the mermaid relationship (see https://mermaid.js.org/syntax/entityRelationshipDiagram.html).
+[[joins]]
+left = "decisions.record_id"
+right = "summaries.record_id"
+kind = "||--o{"
+label = "record_id"
+note = "Exact join. Each summary matches at most one decision; a decision can have zero, one or several summaries."
+
+[[joins]]
+left = "summaries.summary_id"
+right = "summaries.duplicate_of"
+kind = "||--o{"
+label = "duplicate_of"
+note = "A summary that repeats an earlier one word for word points to it."
+
+[[joins]]
+left = "decisions.case_number"
+right = "summaries.case_numbers"
+kind = "}o..o{"
+label = "case number (loose)"
+note = "Not an exact join: `case_numbers` holds several numbers and drops leading zeros. Normalize both sides before comparing. Use `record_id` where it is filled."

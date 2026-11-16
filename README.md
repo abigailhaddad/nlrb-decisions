@@ -46,3 +46,18 @@ The 2026-11-15 run: 11,696 entries from 828 weekly pages (824 with at least one 
 A second step (`src/summaries_refresh.py`) reads the first 2 pages of the weekly-summaries index, fetches any week not yet in `summaries.parquet`, matches every entry again against the decisions table, and uploads if something is new. It never re-fetches a week already in the table, so a later correction NLRB makes to an old week page is not picked up.
 
 If more than 300 entries were added to one listing between runs, some would be past page 3; rerun the full crawl and `build.py` to catch up.
+
+## Data dictionary
+
+[`docs/data_dictionary.md`](docs/data_dictionary.md) lists every column of both tables with its type, a description, the share of rows that have a value, and an example, plus a diagram of how the tables join. Types, counts and examples are read from the published parquet files; descriptions are in [`docs/tables.toml`](docs/tables.toml), written from the code that builds each column. Regenerate it with
+
+    python src/data_docs.py fetch data   # download the current files from Hugging Face
+    python src/data_docs.py write data   # write docs/data_dictionary.md
+
+`src/card.py` puts the same section on the Hugging Face dataset card. Both stop with an error if a parquet column has no description in `docs/tables.toml` or a described column is gone, and the daily workflow runs that check too.
+
+## SQLite download
+
+The daily workflow builds `nlrb-decisions.sqlite` from the files on Hugging Face (tables `decisions` and `summaries`, plus `_source`, which records the Hugging Face commit) and attaches it to the GitHub release [`latest-data`](https://github.com/abigailhaddad/nlrb-decisions/releases/tag/latest-data). The release is replaced whenever the Hugging Face commit changes. To build it yourself:
+
+    python src/build_sqlite.py data nlrb-decisions.sqlite
