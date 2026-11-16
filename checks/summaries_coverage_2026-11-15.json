@@ -1,0 +1,694 @@
+{
+ "as_of": "2026-11-15",
+ "entries": 11696,
+ "weeks": 824,
+ "entry_dates": [
+  "2011-01-03",
+  "2026-11-03"
+ ],
+ "by_section": {
+  "alj": {
+   "entries": 2732,
+   "matched": 2480
+  },
+  "appellate": {
+   "entries": 781,
+   "matched": 0
+  },
+  "board": {
+   "entries": 3193,
+   "matched": 3051
+  },
+  "unpublished": {
+   "entries": 4990,
+   "matched": 4376
+  }
+ },
+ "by_year_excluding_appellate": {
+  "1011": {
+   "entries": 1,
+   "matched": 0
+  },
+  "1014": {
+   "entries": 1,
+   "matched": 0
+  },
+  "2001": {
+   "entries": 1,
+   "matched": 0
+  },
+  "2006": {
+   "entries": 1,
+   "matched": 1
+  },
+  "2011": {
+   "entries": 1069,
+   "matched": 812
+  },
+  "2012": {
+   "entries": 992,
+   "matched": 814
+  },
+  "2013": {
+   "entries": 826,
+   "matched": 746
+  },
+  "2014": {
+   "entries": 952,
+   "matched": 882
+  },
+  "2015": {
+   "entries": 951,
+   "matched": 914
+  },
+  "2016": {
+   "entries": 870,
+   "matched": 821
+  },
+  "2017": {
+   "entries": 603,
+   "matched": 576
+  },
+  "2018": {
+   "entries": 682,
+   "matched": 665
+  },
+  "2019": {
+   "entries": 635,
+   "matched": 605
+  },
+  "2020": {
+   "entries": 553,
+   "matched": 538
+  },
+  "2021": {
+   "entries": 465,
+   "matched": 431
+  },
+  "2022": {
+   "entries": 492,
+   "matched": 466
+  },
+  "2023": {
+   "entries": 473,
+   "matched": 443
+  },
+  "2024": {
+   "entries": 516,
+   "matched": 488
+  },
+  "2025": {
+   "entries": 151,
+   "matched": 147
+  },
+  "2026": {
+   "entries": 572,
+   "matched": 551
+  },
+  "2912": {
+   "entries": 2,
+   "matched": 0
+  },
+  "2924": {
+   "entries": 1,
+   "matched": 0
+  },
+  "3013": {
+   "entries": 1,
+   "matched": 0
+  },
+  "3019": {
+   "entries": 1,
+   "matched": 1
+  },
+  "3022": {
+   "entries": 1,
+   "matched": 1
+  },
+  "9012": {
+   "entries": 1,
+   "matched": 0
+  }
+ },
+ "match_method": {
+  "case number + date": 8202,
+  "citation": 1705
+ },
+ "matched_with_citation_note": 1330,
+ "matched_listing_shows_bound_volume_page": 1316,
+ "matched_citations_differ": [
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-march-6-10-2023#1",
+   "citation": "372 NLRB 64",
+   "citation_listing": "372 NLRB No. 64",
+   "match_note": "citation not in table"
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-may-31-june-3-2022#0",
+   "citation": "371 NLRB 103",
+   "citation_listing": "371 NLRB No. 103",
+   "match_note": "citation not in table"
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-june-15-19-2020#2",
+   "citation": "369 NLRB 103",
+   "citation_listing": "369 NLRB No. 103",
+   "match_note": "citation not in table"
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-december-9-13-2019#0",
+   "citation": "368 NLRB 126",
+   "citation_listing": "368 NLRB No. 126",
+   "match_note": "citation not in table"
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-july-30-august-3#0",
+   "citation": "366 NLRB No. 148",
+   "citation_listing": NaN,
+   "match_note": "citation not in table"
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-august-22-26-2016#21",
+   "citation": "364 NLRB 101",
+   "citation_listing": "364 NLRB No. 101",
+   "match_note": "citation not in table"
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-september-28#7",
+   "citation": "362 NLRB No. 20",
+   "citation_listing": "363 NLRB 199",
+   "match_note": "citation not in table"
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-july-1-5-2013#5",
+   "citation": "359 NLRB 160",
+   "citation_listing": "359 NLRB No. 160",
+   "match_note": "citation not in table"
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-july-30-august-3-0#5",
+   "citation": "358 NLRB No. 95",
+   "citation_listing": NaN,
+   "match_note": "citation not in table"
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-february-21-24-0#0",
+   "citation": "357 NLRB No. 7",
+   "citation_listing": "358 NLRB 27",
+   "match_note": "citation not in table"
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-the-week-of-june-27-to#3",
+   "citation": "356 NLRB No. 4",
+   "citation_listing": "357 NLRB 15",
+   "match_note": "citation not in table"
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-the-week-of-may-9-13-2011#0",
+   "citation": "356 NLRB No. 154",
+   "citation_listing": NaN,
+   "match_note": "citation not in table"
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-the-week-of-april-25-29#4",
+   "citation": "356 NLRB No. 145",
+   "citation_listing": NaN,
+   "match_note": "citation not in table"
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-the-week-of-march-28-april#1",
+   "citation": "356 NLRB No. 120",
+   "citation_listing": NaN,
+   "match_note": "citation not in table"
+  }
+ ],
+ "entries_with_implausible_dates": [
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-march-23-27-2026#0",
+   "header_date_text": "March 23, 2006",
+   "date": "2006-03-23",
+   "record_id": "board|09031d458420e853"
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-november-4-8-2024#6",
+   "header_date_text": "November 7, 2924",
+   "date": "2924-11-07",
+   "record_id": NaN
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-march-28-april-1-0#2",
+   "header_date_text": "March 28, 3022",
+   "date": "3022-03-28",
+   "record_id": "board|09031d45836fc488"
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-june-3-7-2019#0",
+   "header_date_text": "June 3, 3019",
+   "date": "3019-06-03",
+   "record_id": "board|09031d4582c13405"
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-april-21-25-2014#8",
+   "header_date_text": "April 25, 1014",
+   "date": "1014-04-25",
+   "record_id": NaN
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-december-2-6-2013#2",
+   "header_date_text": "December 2, 3013",
+   "date": "3013-12-02",
+   "record_id": NaN
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-july-23-27-2012#6",
+   "header_date_text": "July 26, 2912",
+   "date": "2912-07-26",
+   "record_id": NaN
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-may-7-11-2012#6",
+   "header_date_text": "May 7, 9012",
+   "date": "9012-05-07",
+   "record_id": NaN
+  },
+  {
+   "summary_id": "summary-of-nlrb-decision-for-week-of-february-6-10-2012#11",
+   "header_date_text": "February 7, 2912",
+   "date": "2912-02-07",
+   "record_id": NaN
+  },
+  {
+   "summary_id": "summary-of-nlrb-decisions-for-week-of-november-14-18-0#20",
+   "header_date_text": "November 15, 2001",
+   "date": "2001-11-15",
+   "record_id": NaN
+  },
+  {
+   "summary_id": "weekly-summary-for-week-of-january-3-7-2011#8",
+   "header_date_text": "January 7, 1011",
+   "date": "1011-01-07",
+   "record_id": NaN
+  }
+ ],
+ "unmatched_excluding_appellate": 1008,
+ "unmatched_reason": {
+  "no row with this case number and date": 787,
+  "no date": 97,
+  "ambiguous": 95,
+  "has citation": 19,
+  "citation conflict": 10
+ },
+ "unmatched_bucket": {
+  "case number in the table, but only at dates more than 7 days away": 432,
+  "case number in the table, date differs by 1 to 7 days": 217,
+  "none of the entry's case numbers is in the table": 138,
+  "entry has no date in its header or summary": 97,
+  "more than one row qualifies": 95,
+  "the summary's citation disagrees with the row(s) found": 29
+ },
+ "unmatched_bucket_by_section": [
+  {
+   "section": "alj",
+   "bucket": "case number in the table, but only at dates more than 7 days away",
+   "n": 96
+  },
+  {
+   "section": "alj",
+   "bucket": "case number in the table, date differs by 1 to 7 days",
+   "n": 56
+  },
+  {
+   "section": "alj",
+   "bucket": "entry has no date in its header or summary",
+   "n": 56
+  },
+  {
+   "section": "alj",
+   "bucket": "more than one row qualifies",
+   "n": 9
+  },
+  {
+   "section": "alj",
+   "bucket": "none of the entry's case numbers is in the table",
+   "n": 35
+  },
+  {
+   "section": "board",
+   "bucket": "case number in the table, but only at dates more than 7 days away",
+   "n": 34
+  },
+  {
+   "section": "board",
+   "bucket": "case number in the table, date differs by 1 to 7 days",
+   "n": 54
+  },
+  {
+   "section": "board",
+   "bucket": "entry has no date in its header or summary",
+   "n": 3
+  },
+  {
+   "section": "board",
+   "bucket": "more than one row qualifies",
+   "n": 8
+  },
+  {
+   "section": "board",
+   "bucket": "none of the entry's case numbers is in the table",
+   "n": 14
+  },
+  {
+   "section": "board",
+   "bucket": "the summary's citation disagrees with the row(s) found",
+   "n": 29
+  },
+  {
+   "section": "unpublished",
+   "bucket": "case number in the table, but only at dates more than 7 days away",
+   "n": 302
+  },
+  {
+   "section": "unpublished",
+   "bucket": "case number in the table, date differs by 1 to 7 days",
+   "n": 107
+  },
+  {
+   "section": "unpublished",
+   "bucket": "entry has no date in its header or summary",
+   "n": 38
+  },
+  {
+   "section": "unpublished",
+   "bucket": "more than one row qualifies",
+   "n": 78
+  },
+  {
+   "section": "unpublished",
+   "bucket": "none of the entry's case numbers is in the table",
+   "n": 89
+  }
+ ],
+ "records_matched_by_more_than_one_entry": 105,
+ "rows_in_entry_date_range": 10852,
+ "rows_in_range_with_summary": 9802,
+ "rows_in_range_without_summary_by_listing": {
+  "unpublished": 816,
+  "board": 120,
+  "alj": 114
+ },
+ "rows_in_range_without_summary_by_reason": {
+  "the row's case number is in summary entries, but only at other dates": 518,
+  "a summary entry with the row's case number is dated within 7 days (left unmatched)": 296,
+  "the row's case number is in no summary entry": 236
+ },
+ "rows_in_range_by_listing_year": [
+  {
+   "listing": "alj",
+   "year": "2011",
+   "rows": 224,
+   "with_summary": 183
+  },
+  {
+   "listing": "alj",
+   "year": "2012",
+   "rows": 196,
+   "with_summary": 181
+  },
+  {
+   "listing": "alj",
+   "year": "2013",
+   "rows": 235,
+   "with_summary": 224
+  },
+  {
+   "listing": "alj",
+   "year": "2014",
+   "rows": 214,
+   "with_summary": 208
+  },
+  {
+   "listing": "alj",
+   "year": "2015",
+   "rows": 190,
+   "with_summary": 184
+  },
+  {
+   "listing": "alj",
+   "year": "2016",
+   "rows": 221,
+   "with_summary": 217
+  },
+  {
+   "listing": "alj",
+   "year": "2017",
+   "rows": 178,
+   "with_summary": 177
+  },
+  {
+   "listing": "alj",
+   "year": "2018",
+   "rows": 144,
+   "with_summary": 142
+  },
+  {
+   "listing": "alj",
+   "year": "2019",
+   "rows": 157,
+   "with_summary": 152
+  },
+  {
+   "listing": "alj",
+   "year": "2020",
+   "rows": 79,
+   "with_summary": 77
+  },
+  {
+   "listing": "alj",
+   "year": "2021",
+   "rows": 122,
+   "with_summary": 121
+  },
+  {
+   "listing": "alj",
+   "year": "2022",
+   "rows": 119,
+   "with_summary": 117
+  },
+  {
+   "listing": "alj",
+   "year": "2023",
+   "rows": 149,
+   "with_summary": 147
+  },
+  {
+   "listing": "alj",
+   "year": "2024",
+   "rows": 146,
+   "with_summary": 140
+  },
+  {
+   "listing": "alj",
+   "year": "2025",
+   "rows": 116,
+   "with_summary": 112
+  },
+  {
+   "listing": "alj",
+   "year": "2026",
+   "rows": 93,
+   "with_summary": 87
+  },
+  {
+   "listing": "board",
+   "year": "2011",
+   "rows": 304,
+   "with_summary": 250
+  },
+  {
+   "listing": "board",
+   "year": "2012",
+   "rows": 220,
+   "with_summary": 204
+  },
+  {
+   "listing": "board",
+   "year": "2013",
+   "rows": 137,
+   "with_summary": 132
+  },
+  {
+   "listing": "board",
+   "year": "2014",
+   "rows": 288,
+   "with_summary": 274
+  },
+  {
+   "listing": "board",
+   "year": "2015",
+   "rows": 288,
+   "with_summary": 285
+  },
+  {
+   "listing": "board",
+   "year": "2016",
+   "rows": 269,
+   "with_summary": 257
+  },
+  {
+   "listing": "board",
+   "year": "2017",
+   "rows": 158,
+   "with_summary": 154
+  },
+  {
+   "listing": "board",
+   "year": "2018",
+   "rows": 239,
+   "with_summary": 235
+  },
+  {
+   "listing": "board",
+   "year": "2019",
+   "rows": 242,
+   "with_summary": 241
+  },
+  {
+   "listing": "board",
+   "year": "2020",
+   "rows": 206,
+   "with_summary": 206
+  },
+  {
+   "listing": "board",
+   "year": "2021",
+   "rows": 123,
+   "with_summary": 123
+  },
+  {
+   "listing": "board",
+   "year": "2022",
+   "rows": 155,
+   "with_summary": 154
+  },
+  {
+   "listing": "board",
+   "year": "2023",
+   "rows": 129,
+   "with_summary": 128
+  },
+  {
+   "listing": "board",
+   "year": "2024",
+   "rows": 155,
+   "with_summary": 154
+  },
+  {
+   "listing": "board",
+   "year": "2025",
+   "rows": 8,
+   "with_summary": 8
+  },
+  {
+   "listing": "board",
+   "year": "2026",
+   "rows": 182,
+   "with_summary": 178
+  },
+  {
+   "listing": "unpublished",
+   "year": "2011",
+   "rows": 446,
+   "with_summary": 358
+  },
+  {
+   "listing": "unpublished",
+   "year": "2012",
+   "rows": 464,
+   "with_summary": 415
+  },
+  {
+   "listing": "unpublished",
+   "year": "2013",
+   "rows": 414,
+   "with_summary": 387
+  },
+  {
+   "listing": "unpublished",
+   "year": "2014",
+   "rows": 439,
+   "with_summary": 397
+  },
+  {
+   "listing": "unpublished",
+   "year": "2015",
+   "rows": 471,
+   "with_summary": 442
+  },
+  {
+   "listing": "unpublished",
+   "year": "2016",
+   "rows": 398,
+   "with_summary": 343
+  },
+  {
+   "listing": "unpublished",
+   "year": "2017",
+   "rows": 285,
+   "with_summary": 245
+  },
+  {
+   "listing": "unpublished",
+   "year": "2018",
+   "rows": 420,
+   "with_summary": 280
+  },
+  {
+   "listing": "unpublished",
+   "year": "2019",
+   "rows": 287,
+   "with_summary": 200
+  },
+  {
+   "listing": "unpublished",
+   "year": "2020",
+   "rows": 311,
+   "with_summary": 250
+  },
+  {
+   "listing": "unpublished",
+   "year": "2021",
+   "rows": 230,
+   "with_summary": 185
+  },
+  {
+   "listing": "unpublished",
+   "year": "2022",
+   "rows": 219,
+   "with_summary": 183
+  },
+  {
+   "listing": "unpublished",
+   "year": "2023",
+   "rows": 199,
+   "with_summary": 159
+  },
+  {
+   "listing": "unpublished",
+   "year": "2024",
+   "rows": 216,
+   "with_summary": 193
+  },
+  {
+   "listing": "unpublished",
+   "year": "2025",
+   "rows": 40,
+   "with_summary": 25
+  },
+  {
+   "listing": "unpublished",
+   "year": "2026",
+   "rows": 327,
+   "with_summary": 288
+  }
+ ]
+}

@@ -1,0 +1,104 @@
+{
+ "decisions_source": "out/decisions.parquet",
+ "weeks_listed": 828,
+ "weeks_parsed": 828,
+ "weeks_with_no_entries": [
+  "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-december-29",
+  "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-november-17-21-0",
+  "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-october-6-10-2025",
+  "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-september-8-12-0"
+ ],
+ "entries": 11696,
+ "by_section": {
+  "unpublished": 4990,
+  "board": 3193,
+  "alj": 2732,
+  "appellate": 781
+ },
+ "matched": 9907,
+ "matched_by_method": {
+  "case number + date": 8202,
+  "citation": 1705
+ },
+ "duplicate_entries": 32,
+ "problems": [
+  {
+   "where": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-june-23-27-2014",
+   "section": "appellate",
+   "why": "text outside any entry",
+   "text": "On June 26, 2014, the Supreme Court issued its opinion in NLRB v. Noel Canning, holding that the President’s January 2012 recess appointments of Members Block, Flynn, and Griffin were not authorized by the Recess Appointments Clause. See Art. II, § 2, C1. 3 (“The President shall have Power to fill u"
+  },
+  {
+   "where": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-june-23-27-2014",
+   "section": "appellate",
+   "why": "text outside any entry",
+   "text": "The Court addressed the three questions on which it granted certiorari: (1) Whether the President’s recess-appointment power may be exercised during a recess that occurs within a session of the Senate, or is instead limited to recesses that occur between enumerated sessions of the Senate; (2) whethe"
+  },
+  {
+   "where": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-june-23-27-2014",
+   "section": "appellate",
+   "why": "text outside any entry",
+   "text": "Addressing the first question, the Supreme Court held that the phrase “the recess of the Senate” was ambiguous and that the scope of the phrase must be interpreted broadly to include both inter-session and intra-session recesses to not frustrate the Clause’s purpose of allowing Presidents to make ap"
+  },
+  {
+   "where": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-june-23-27-2014",
+   "section": "appellate",
+   "why": "text outside any entry",
+   "text": "On the second question, the Supreme Court held that the Clause’s ambiguous phase “vacancies that may happen during the recess of the Senate” applies to vacancies that first come into existence during a recess and to vacancies that initially occur before a recess but continue to exist during the rece"
+  },
+  {
+   "where": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-june-23-27-2014",
+   "section": "appellate",
+   "why": "text outside any entry",
+   "text": "Regarding the third question, the Supreme Court stated that for purposes of the Recess Appointments Clause, the Senate is in session when it says that it is in session, provided that, under its own rules, it retains the capacity to transact Senate business. That principle, the Court explained, is ba"
+  },
+  {
+   "where": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-june-23-27-2014",
+   "section": "appellate",
+   "why": "text outside any entry",
+   "text": "The concurring opinion concurred only in the Court’s judgment of affirmance. On the first question, Justice Scalia would have held that “the Recess” is only the gap between sessions (i.e., inter-session recesses) based on his reading of the unambiguous plain meaning of the Constitution’s text. But e"
+  },
+  {
+   "where": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-june-23-27-2014",
+   "section": "appellate",
+   "why": "text outside any entry",
+   "text": "The Court’s opinion is available here."
+  },
+  {
+   "where": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-january-14-18-2013",
+   "section": "board",
+   "why": "text outside any entry",
+   "text": "This case involved a prior ruling by the two-member Board, whose authority to act was rejected by the U.S. Supreme Court decision in New Process Steel, LP (June 17, 2010)."
+  },
+  {
+   "where": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-december-17-21-0",
+   "section": "board",
+   "why": "text outside any entry",
+   "text": "This case involved prior rulings by the two-member Board, whose authority to act was rejected by the U.S. Supreme Court decision in New Process Steel, LP (June 17, 2010)."
+  },
+  {
+   "where": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-september-17-21-0",
+   "section": "board",
+   "why": "text outside any entry",
+   "text": "(The first two decisions were issued on September 13, but the summaries were not available until this week’s report.)"
+  },
+  {
+   "where": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/summary-of-nlrb-decisions-for-week-of-january-23-27-2012",
+   "section": "board",
+   "why": "text outside any entry",
+   "text": "(The following decisions were issued on December 30 but the summaries were not available until this week’s report.)"
+  },
+  {
+   "where": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/weekly-summary-for-week-of-january-10-14-2011",
+   "section": "board",
+   "why": "text outside any entry",
+   "text": "The following case involves prior ruling by the two-member Board, whose authority to act was rejected by the U.S. Supreme Court decision in New Process Steel, LP (June 17, 2010). The new decision summarized here was reached by a three-member panel of the Board or by the full Board."
+  },
+  {
+   "where": "https://www.nlrb.gov/cases-decisions/weekly-summaries-decisions/weekly-summary-for-week-of-january-3-7-2011",
+   "section": "board",
+   "why": "text outside any entry",
+   "text": "The following cases involve prior rulings by the two-member Board, whose authority to act was rejected by the U.S. Supreme Court decision in New Process Steel, LP (June 17, 2010). The new decisions summarized here were reached by a three-member panel of the Board or by the full Board."
+  }
+ ]
+}
