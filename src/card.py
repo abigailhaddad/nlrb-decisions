@@ -88,6 +88,11 @@ How entries were matched to `decisions.parquet` rows: first by citation (the row
 - Live spot check, `checks/summaries_sample_{sum_date}.md` in the GitHub repo: {len(ssample)} entries ({len(sm_rand)} random matched pairs plus edge cases). The header was found on the live week page for {sum(x['header_on_live_page'] for x in ssample)} of {len(ssample)} and the summary text for {sum(bool(x['summary_on_live_page']) for x in ssample)}. For {sum(ok(x) for x in sm_matched)} of the {len(sm_matched)} matched entries, NLRB's live listing row for the matched decision shows a case number from the summary header and the same date, and its citation is the summary's or the bound-volume page that replaced it.
 """
 
+# Data dictionary and join diagram, from the same out/ files and docs/tables.toml (src/data_docs.py)
+sys.path.insert(0, os.path.dirname(__file__))
+import data_docs
+dictionary = data_docs.markdown("out", level=2, source="the files in this dataset")
+
 card = f"""---
 license: cc0-1.0
 pretty_name: NLRB decisions (listing metadata)
@@ -146,6 +151,7 @@ Each listing was read twice: page by page (100 rows a page, newest first), and a
 - {o['board_blank_citation']} Board decisions have no citation and {o['board_placeholder_citation']} show `00 NLRB No. 00`. {n(o['board_citation_shared_by_2plus_documents'])} rows share a citation with at least one other document (NLRB lists more than one document under that citation; I didn't check why).
 - The table never shrinks: an entry NLRB later removes from a listing stays.
 
+{dictionary}
 Code, checks and the refresh workflow: https://github.com/abigailhaddad/nlrb-decisions
 """
 open("out/README.md", "w").write(card)

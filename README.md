@@ -46,3 +46,42 @@ The 2026-11-15 run: 11,696 entries from 828 weekly pages (824 with at least one 
 A second step (`src/summaries_refresh.py`) reads the first 2 pages of the weekly-summaries index, fetches any week not yet in `summaries.parquet`, matches every entry again against the decisions table, and uploads if something is new. It never re-fetches a week already in the table, so a later correction NLRB makes to an old week page is not picked up.
 
 If more than 300 entries were added to one listing between runs, some would be past page 3; rerun the full crawl and `build.py` to catch up.
+
+## Data dictionary
+
+[`docs/data_dictionary.md`](docs/data_dictionary.md) lists every column of both tables with its type, a description, the share of rows that have a value, and an example, plus a diagram of how the tables join. Types, counts and examples are read from the published parquet files; descriptions are in [`docs/tables.toml`](docs/tables.toml), written from the code that builds each column. Regenerate it with
+
+    python src/data_docs.py fetch data   # download the current files from Hugging Face
+    python src/data_docs.py write data   # write docs/data_dictionary.md
+
+`src/card.py` puts the same section on the Hugging Face dataset card. Both stop with an error if a parquet column has no description in `docs/tables.toml` or a described column is gone, and the daily workflow runs that check too.
+
+## SQLite download
+
+The daily workflow builds `nlrb-decisions.sqlite` from the files on Hugging Face (tables `decisions` and `summaries`, plus `_source`, which records the Hugging Face commit) and attaches it to the GitHub release [`latest-data`](https://github.com/abigailhaddad/nlrb-decisions/releases/tag/latest-data). The release is replaced whenever the Hugging Face commit changes. To build it yourself:
+
+    python src/build_sqlite.py data nlrb-decisions.sqlite
+
+## Zenodo archive
+
+`.github/workflows/zenodo.yml` runs on the 3rd of each month and uploads the parquet files and the dataset card to Zenodo as a new version of one record, so the dataset has a citable DOI (the concept DOI covers every version; each month's version gets its own). It does nothing if the files haven't changed since the last version, and it skips with a notice, without failing, until the `ZENODO_TOKEN` secret exists. Metadata is in `.zenodo.json`.
+
+Setup, sandbox first (the sandbox is a separate site with separate accounts and tokens, and its DOIs are not real):
+
+1. Make an account at https://sandbox.zenodo.org. Under your name, Applications, Personal access tokens, New token: tick `deposit:write` and `deposit:actions` only.
+2. Add the token to this repo and point the workflow at the sandbox, leaving drafts unpublished:
+
+       gh secret set ZENODO_TOKEN -R abigailhaddad/nlrb-decisions          # paste the sandbox token
+       gh variable set ZENODO_API -R abigailhaddad/nlrb-decisions --body https://sandbox.zenodo.org/api
+       gh variable set ZENODO_PUBLISH -R abigailhaddad/nlrb-decisions --body false
+
+3. Run it: `gh workflow run zenodo.yml -R abigailhaddad/nlrb-decisions`. The log links the draft. Check the title, creator, CC0 license and the three files on the sandbox site.
+4. `gh variable set ZENODO_PUBLISH -R abigailhaddad/nlrb-decisions --body true` and run it again: it publishes the draft and logs the DOI and concept DOI. Run once more; it should say the files are unchanged.
+
+Then production:
+
+5. Make an account at https://zenodo.org and a token with the same two scopes.
+6. `gh secret set ZENODO_TOKEN ...` with the production token, `gh variable delete ZENODO_API -R abigailhaddad/nlrb-decisions` (production is the default), and `ZENODO_PUBLISH` false for the first run so you can look at the draft on zenodo.org before publishing. A published version can't be deleted.
+7. Set `ZENODO_PUBLISH` to true and run again. Put the concept DOI from the log in this README and on the dataset card.
+
+Don't turn on Zenodo's GitHub integration for this repo. It reads the same `.zenodo.json` and would archive the code on every GitHub release, and the `latest-data` release is replaced every day the data changes.
