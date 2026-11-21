@@ -6,10 +6,11 @@ table, upload.
 
 The listings are sorted newest first, so the first PAGES pages (100 rows each) hold anything new. Rows are
 keyed by record_id (listing + decision document id); a fresh copy of a row replaces the old one, and rows
-no longer on the first pages are kept. The run stops without uploading if a fetch fails, a page parses to
-nothing or with problems, or the merge would shrink the table.
+no longer on the first pages are kept. A page that parses to an empty/odd "no results" page is retried a
+few times (NLRB's site can serve one of those transiently); the run stops without uploading if a fetch
+fails, a page still parses to nothing or with problems after retries, or the merge would shrink the table.
 """
-import os, sys
+import os, sys, time
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -18,6 +19,12 @@ import build, crawl, nlrb
 REPO = "abigailhaddad/nlrb-decisions"
 FILE = "decisions.parquet"
 PAGES = 3
+# A page that returns 200 but parses to 0 rows (e.g. "There are no Board Decisions
+# matching the...") is NLRB's site serving an empty-results page, not a network error,
+# so crawl.get()'s own retry (which only catches non-200s and firewall pages) never
+# sees it. Retry that case here, on the chance it's a transient glitch on their end.
+EMPTY_PAGE_RETRIES = 3
+EMPTY_PAGE_WAIT = 60
 
 
 def merge(old, new):
@@ -26,15 +33,26 @@ def merge(old, new):
     return pd.concat([new, kept], ignore_index=True)
 
 
+def fetch_page(listing, url, p):
+    """One listing page, retrying an empty/odd-row-count result a few times before giving up
+    (NLRB's site can briefly serve a 200 'no results' page instead of real rows)."""
+    for attempt in range(1, EMPTY_PAGE_RETRIES + 1):
+        page = crawl.get(f"{url}?items_per_page={crawl.PER_PAGE}&page={p}")
+        d, problems = nlrb.parse_page(page, listing, f"{listing}/{p}")
+        if len(d) == crawl.PER_PAGE and not problems:
+            return d
+        if attempt < EMPTY_PAGE_RETRIES:
+            print(f"retry {listing} page {p}: parsed to {len(d)} rows with problems {problems[:3]}", flush=True)
+            time.sleep(EMPTY_PAGE_WAIT)
+    sys.exit(f"STOP: {listing} page {p} parsed to {len(d)} rows with problems {problems[:3]} "
+             f"after {EMPTY_PAGE_RETRIES} tries; nothing uploaded")
+
+
 def fetch_new():
     rows = []
     for listing, url in nlrb.LISTINGS.items():
         for p in range(PAGES):
-            page = crawl.get(f"{url}?items_per_page={crawl.PER_PAGE}&page={p}")
-            d, problems = nlrb.parse_page(page, listing, f"{listing}/{p}")
-            if len(d) != crawl.PER_PAGE or problems:
-                sys.exit(f"STOP: {listing} page {p} parsed to {len(d)} rows with problems {problems[:3]}; nothing uploaded")
-            rows += d
+            rows += fetch_page(listing, url, p)
     df = pd.DataFrame(rows).drop_duplicates(["listing", "document_url"])
     return build.finalize(df)
 
