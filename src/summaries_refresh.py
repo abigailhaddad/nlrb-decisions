@@ -15,6 +15,7 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(__file__))
 import crawl, summaries as S, summaries_build as B, summaries_crawl as C
+from hf_retry import hf_retry
 
 REPO = "abigailhaddad/nlrb-decisions"
 FILE = "summaries.parquet"
@@ -23,10 +24,10 @@ PAGES = 2  # 20 weeks a page
 
 def main():
     dry = "--dry-run" in sys.argv
-    old = pd.read_parquet(f"https://huggingface.co/datasets/{REPO}/resolve/main/{FILE}")
+    old = hf_retry(pd.read_parquet, f"https://huggingface.co/datasets/{REPO}/resolve/main/{FILE}")
     dec_path = "out/decisions.parquet" if os.path.exists("out/decisions.parquet") else \
         f"https://huggingface.co/datasets/{REPO}/resolve/main/decisions.parquet"
-    dec = pd.read_parquet(dec_path)
+    dec = hf_retry(pd.read_parquet, dec_path)
     have = set(old["week_url"])
     weeks = []
     for p in range(PAGES):
@@ -87,8 +88,8 @@ def main():
         print("SKIP UPLOAD: the HF_TOKEN secret is empty. Nothing was uploaded.")
         return
     from huggingface_hub import HfApi
-    HfApi().upload_file(path_or_fileobj=f"out/{FILE}", path_in_repo=FILE, repo_id=REPO, repo_type="dataset",
-                        commit_message=f"Refresh summaries: +{len(new_entries)} entries, {gained} newly matched")
+    hf_retry(HfApi().upload_file, path_or_fileobj=f"out/{FILE}", path_in_repo=FILE, repo_id=REPO, repo_type="dataset",
+             commit_message=f"Refresh summaries: +{len(new_entries)} entries, {gained} newly matched")
 
 
 if __name__ == "__main__":

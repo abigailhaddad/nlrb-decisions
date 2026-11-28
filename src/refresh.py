@@ -15,6 +15,7 @@ import pandas as pd
 
 sys.path.insert(0, os.path.dirname(__file__))
 import build, crawl, nlrb
+from hf_retry import hf_retry
 
 REPO = "abigailhaddad/nlrb-decisions"
 FILE = "decisions.parquet"
@@ -70,7 +71,7 @@ def changed_rows(old, new):
 
 def main():
     dry = "--dry-run" in sys.argv
-    old = pd.read_parquet(f"https://huggingface.co/datasets/{REPO}/resolve/main/{FILE}")
+    old = hf_retry(pd.read_parquet, f"https://huggingface.co/datasets/{REPO}/resolve/main/{FILE}")
     new = fetch_new()
     added, updated = changed_rows(old, new)
     merged = merge(old, new)[old.columns.tolist()]
@@ -94,8 +95,8 @@ def main():
               "secret HF_TOKEN to publish. Nothing was uploaded.")
         return
     from huggingface_hub import HfApi
-    HfApi().upload_file(path_or_fileobj=f"out/{FILE}", path_in_repo=FILE, repo_id=REPO, repo_type="dataset",
-                        commit_message=f"Refresh: +{added} new, {updated} updated")
+    hf_retry(HfApi().upload_file, path_or_fileobj=f"out/{FILE}", path_in_repo=FILE, repo_id=REPO, repo_type="dataset",
+             commit_message=f"Refresh: +{added} new, {updated} updated")
 
 
 if __name__ == "__main__":
